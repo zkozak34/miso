@@ -44,6 +44,7 @@ func (s *Server) routes() http.Handler {
 			r.Get("/logs", s.handleApplicationLogs)
 			r.Get("/logs/stream", s.handleApplicationLogStream)
 			r.Get("/stats", s.handleApplicationStats)
+			r.Get("/deployments", s.handleListDeployments)
 			r.Post("/{action}", s.handleApplicationAction)
 		})
 	})

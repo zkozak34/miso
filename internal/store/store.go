@@ -376,6 +376,55 @@ func (s *Store) SetApplicationStatus(id, status string) (Application, error) {
 	return s.GetApplication(id)
 }
 
+// CreateDeployment records the start of a deploy attempt (status building) and
+// returns the new row so callers can later finish it by id.
+func (s *Store) CreateDeployment(appID, image, trigger string) (Deployment, error) {
+	if trigger == "" {
+		trigger = "manual"
+	}
+	d := Deployment{
+		ID: newID(), ApplicationID: appID, Status: StatusBuilding,
+		Image: image, Trigger: trigger, StartedAt: now(),
+	}
+	_, err := s.db.Exec(
+		`INSERT INTO deployments (id, application_id, status, image, trigger_kind, started_at) VALUES (?, ?, ?, ?, ?, ?)`,
+		d.ID, d.ApplicationID, d.Status, d.Image, d.Trigger, d.StartedAt)
+	return d, err
+}
+
+// FinishDeployment marks a deploy attempt as completed (running or failed),
+// recording the finish time and any error. Unknown ids are ignored.
+func (s *Store) FinishDeployment(id, status, errMsg string) error {
+	_, err := s.db.Exec(
+		`UPDATE deployments SET status = ?, error = ?, finished_at = ? WHERE id = ?`,
+		status, errMsg, now(), id)
+	return err
+}
+
+// ListDeployments returns an application's deploy history, newest first.
+func (s *Store) ListDeployments(appID string) ([]Deployment, error) {
+	const q = `
+		SELECT id, application_id, status, image, trigger_kind, error, started_at, finished_at
+		FROM deployments WHERE application_id = ? ORDER BY started_at DESC`
+	rows, err := s.db.Query(q, appID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []Deployment{}
+	for rows.Next() {
+		var d Deployment
+		if err := rows.Scan(&d.ID, &d.ApplicationID, &d.Status, &d.Image, &d.Trigger, &d.Error, &d.StartedAt, &d.FinishedAt); err != nil {
+			return nil, err
+		}
+		if d.FinishedAt > d.StartedAt {
+			d.DurationMs = d.FinishedAt - d.StartedAt
+		}
+		out = append(out, d)
+	}
+	return out, rows.Err()
+}
+
 func (s *Store) DeleteApplication(id string) error { return s.deleteByID("applications", id) }
 
 func (s *Store) deleteByID(table, id string) error {

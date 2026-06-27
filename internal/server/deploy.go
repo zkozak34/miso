@@ -82,7 +82,8 @@ func isImageSource(app store.Application) bool {
 }
 
 func (s *Server) deploy(w http.ResponseWriter, app store.Application) {
-	if isImageSource(app) {
+	imageSource := isImageSource(app)
+	if imageSource {
 		if strings.TrimSpace(app.Image) == "" {
 			writeStatus(w, http.StatusBadRequest, map[string]string{"error": "imaj gerekli"})
 			return
@@ -99,15 +100,27 @@ func (s *Server) deploy(w http.ResponseWriter, app store.Application) {
 	}
 	lb := s.newBuildLog(app.ID)
 
-	if isImageSource(app) {
-		fmt.Fprintf(lb, "==> %s imajı çekiliyor\n", app.Image)
-		go s.runImageDeploy(app, app.Image, lb)
+	// The deployed image is the hub ref for image sources, otherwise the image
+	// we build from the repo. Record the attempt so it shows in the history.
+	image := app.Image
+	if !imageSource {
+		image = store.ImageName(app.ContainerName)
+	}
+	depID := ""
+	if dep, derr := s.store.CreateDeployment(app.ID, image, "manual"); derr == nil {
+		depID = dep.ID
+	} else {
+		log.Printf("deploy: create deployment %s: %v", app.ID, derr)
+	}
+
+	if imageSource {
+		fmt.Fprintf(lb, "==> %s imajı çekiliyor\n", image)
+		go s.runImageDeploy(app, image, lb, depID)
 	} else {
 		token, _ := s.store.ApplicationAuthToken(app.ID)
-		image := store.ImageName(app.ContainerName)
 		gitURL := buildGitURL(app.RepoURL, app.Branch, token)
 		fmt.Fprintf(lb, "==> %s imajı %s reposundan derleniyor\n", image, app.RepoURL)
-		go s.runDeploy(app, image, gitURL, lb)
+		go s.runDeploy(app, image, gitURL, lb, depID)
 	}
 
 	writeJSON(w, a)
@@ -115,7 +128,7 @@ func (s *Server) deploy(w http.ResponseWriter, app store.Application) {
 
 // runDeploy builds the image then (re)creates and starts the container,
 // recording the result in the store. It runs detached from the request.
-func (s *Server) runDeploy(app store.Application, image, gitURL string, lb *buildLog) {
+func (s *Server) runDeploy(app store.Application, image, gitURL string, lb *buildLog, depID string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	defer cancel()
 
@@ -126,30 +139,30 @@ func (s *Server) runDeploy(app store.Application, image, gitURL string, lb *buil
 		BuildArgs:  app.BuildArgs,
 		Labels:     deployLabels(app),
 	}, lb); err != nil {
-		s.failDeploy(app.ID, lb, "Derleme başarısız", err)
+		s.failDeploy(app.ID, depID, lb, "Derleme başarısız", err)
 		return
 	}
 
-	s.startContainer(ctx, app, image, lb)
+	s.startContainer(ctx, app, image, lb, depID)
 }
 
 // runImageDeploy pulls a prebuilt image then (re)creates and starts the
 // container. It runs detached from the request.
-func (s *Server) runImageDeploy(app store.Application, image string, lb *buildLog) {
+func (s *Server) runImageDeploy(app store.Application, image string, lb *buildLog, depID string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	defer cancel()
 
 	if err := s.docker.Pull(ctx, image, lb); err != nil {
-		s.failDeploy(app.ID, lb, "İmaj çekilemedi", err)
+		s.failDeploy(app.ID, depID, lb, "İmaj çekilemedi", err)
 		return
 	}
 
-	s.startContainer(ctx, app, image, lb)
+	s.startContainer(ctx, app, image, lb, depID)
 }
 
 // startContainer (re)creates and starts the container for app from image, then
 // records the result in the store. Shared by the git-build and image-pull paths.
-func (s *Server) startContainer(ctx context.Context, app store.Application, image string, lb *buildLog) {
+func (s *Server) startContainer(ctx context.Context, app store.Application, image string, lb *buildLog, depID string) {
 	fmt.Fprintf(lb, "\n==> %s container'ı başlatılıyor\n", app.ContainerName)
 	cid, err := s.docker.Run(ctx, docker.RunSpec{
 		Image:         image,
@@ -161,7 +174,7 @@ func (s *Server) startContainer(ctx context.Context, app store.Application, imag
 		Labels:        deployLabels(app),
 	})
 	if err != nil {
-		s.failDeploy(app.ID, lb, "Container başlatılamadı", err)
+		s.failDeploy(app.ID, depID, lb, "Container başlatılamadı", err)
 		return
 	}
 
@@ -171,6 +184,11 @@ func (s *Server) startContainer(ctx context.Context, app store.Application, imag
 	if _, err := s.store.MarkApplicationDeployed(app.ID, image, cid); err != nil {
 		log.Printf("deploy: mark deployed %s: %v", app.ID, err)
 	}
+	if depID != "" {
+		if err := s.store.FinishDeployment(depID, store.StatusRunning, ""); err != nil {
+			log.Printf("deploy: finish deployment %s: %v", depID, err)
+		}
+	}
 }
 
 // deployLabels are the Docker labels Miso stamps on every container/image it
@@ -179,11 +197,16 @@ func deployLabels(app store.Application) map[string]string {
 	return map[string]string{"miso.app": app.ID, "miso.managed": "true"}
 }
 
-func (s *Server) failDeploy(appID string, lb *buildLog, stage string, cause error) {
+func (s *Server) failDeploy(appID, depID string, lb *buildLog, stage string, cause error) {
 	msg := fmt.Sprintf("%s: %v", stage, cause)
 	fmt.Fprintf(lb, "\n==> %s\n", msg)
 	if err := s.store.MarkApplicationFailed(appID, msg); err != nil {
 		log.Printf("deploy: mark failed %s: %v", appID, err)
+	}
+	if depID != "" {
+		if err := s.store.FinishDeployment(depID, store.StatusFailed, msg); err != nil {
+			log.Printf("deploy: finish deployment %s: %v", depID, err)
+		}
 	}
 }
 
@@ -259,6 +282,20 @@ func (s *Server) handleApplicationLogs(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeJSON(w, map[string]string{"logs": out})
+}
+
+func (s *Server) handleListDeployments(w http.ResponseWriter, r *http.Request) {
+	aid := chi.URLParam(r, "aid")
+	if _, err := s.store.GetApplication(aid); err != nil {
+		writeError(w, err)
+		return
+	}
+	deps, err := s.store.ListDeployments(aid)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, deps)
 }
 
 func (s *Server) handleApplicationStats(w http.ResponseWriter, r *http.Request) {

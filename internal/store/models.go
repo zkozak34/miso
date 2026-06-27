@@ -71,6 +71,20 @@ type Application struct {
 	UpdatedAt      int64             `json:"updatedAt"`
 }
 
+// Deployment is one recorded deploy attempt of an application: its outcome,
+// the image it (tried to) run, what triggered it and how long it took.
+type Deployment struct {
+	ID            string `json:"id"`
+	ApplicationID string `json:"applicationId"`
+	Status        string `json:"status"`  // building | running | failed
+	Image         string `json:"image"`   // image deployed or attempted
+	Trigger       string `json:"trigger"` // manual (future: push · <branch>)
+	Error         string `json:"error,omitempty"`
+	StartedAt     int64  `json:"startedAt"`
+	FinishedAt    int64  `json:"finishedAt"`        // 0 while still building
+	DurationMs    int64  `json:"durationMs"`        // finishedAt-startedAt, 0 if unfinished
+}
+
 // EnvVar is a runtime environment variable injected into the container. Secret
 // only controls UI masking; the value is stored and returned as-is.
 type EnvVar struct {

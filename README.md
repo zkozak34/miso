@@ -89,6 +89,7 @@ make build      # web/dist'i derler, internal/server/dist'e gömer, bin/miso ür
 | GET | `/api/applications/{aid}/logs` | container (veya derleme) logları |
 | GET | `/api/applications/{aid}/logs/stream` | derleme logları canlı (SSE) |
 | GET | `/api/applications/{aid}/stats` | canlı CPU/bellek/ağ istatistiği |
+| GET | `/api/applications/{aid}/deployments` | dağıtım geçmişi (durum/imaj/tetikleyici/süre) |
 
 ## Komutlar
 

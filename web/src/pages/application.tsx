@@ -48,13 +48,14 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { formatBytes } from "@/lib/api"
-import type { Application, EnvVar, RestartPolicy } from "@/lib/api/resources"
+import type { Application, Deployment, EnvVar, RestartPolicy } from "@/lib/api/resources"
 import {
   useApplication,
   useApplicationAction,
   useApplicationLogs,
   useApplicationStats,
   useDeleteApplication,
+  useDeployments,
   useUpdateApplication,
   useUpdateApplicationEnv,
 } from "@/lib/queries"
@@ -150,7 +151,7 @@ export function ApplicationPage() {
           <Settings app={app} />
         </TabsContent>
         <TabsContent value="deployments" className="mt-6">
-          <Placeholder title="Dağıtım geçmişi" />
+          <Deployments app={app} />
         </TabsContent>
       </Tabs>
     </div>
@@ -932,20 +933,105 @@ function Environment({ app }: { app: Application }) {
   )
 }
 
+function Deployments({ app }: { app: Application }) {
+  const { data: deployments, isLoading } = useDeployments(app.id, app.status === "building")
+  const action = useApplicationAction(app.id)
+
+  if (isLoading) {
+    return <Skeleton className="h-40 w-full rounded-xl" />
+  }
+
+  const rows = deployments ?? []
+  if (rows.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-14 text-center">
+        <div>
+          <p className="text-sm font-semibold">Henüz dağıtım yok</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Bu uygulamayı dağıtınca derleme ve sürüm geçmişi burada görünür.
+          </p>
+        </div>
+        <Button
+          disabled={action.isPending}
+          onClick={() =>
+            action.mutate("deploy", {
+              onSuccess: () => toast.success("Dağıtım başlatıldı"),
+              onError: (e) => toast.error(e.message),
+            })
+          }
+        >
+          <Play className="h-4 w-4" /> Şimdi dağıt
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border">
+      <div className="flex items-center gap-3 border-b bg-muted/30 px-4 py-2.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+        <span className="w-28 flex-none">Durum</span>
+        <span className="flex-1">İmaj</span>
+        <span className="w-28 flex-none">Tetikleyici</span>
+        <span className="w-32 flex-none">Başladı</span>
+        <span className="w-16 flex-none text-right">Süre</span>
+      </div>
+      {rows.map((d) => (
+        <div
+          key={d.id}
+          className="flex items-center gap-3 border-b px-4 py-3 last:border-0 hover:bg-muted/20"
+        >
+          <span className="w-28 flex-none">
+            <StatusBadge status={d.status} />
+          </span>
+          <span
+            className="flex-1 truncate font-mono text-xs text-foreground"
+            title={d.error || d.image}
+          >
+            {d.image || "—"}
+          </span>
+          <span className="w-28 flex-none text-xs text-muted-foreground">
+            {triggerLabel(d.trigger)}
+          </span>
+          <span className="w-32 flex-none font-mono text-xs text-muted-foreground">
+            {fmtStarted(d.startedAt)}
+          </span>
+          <span className="w-16 flex-none text-right font-mono text-xs text-muted-foreground">
+            {fmtDuration(d)}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function triggerLabel(trigger: string): string {
+  return trigger === "manual" ? "Manuel" : trigger
+}
+
+function fmtStarted(ms: number): string {
+  if (!ms) return "—"
+  return new Date(ms).toLocaleString("tr-TR", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+function fmtDuration(d: Deployment): string {
+  if (d.status === "building" || d.durationMs <= 0) return "…"
+  const total = Math.round(d.durationMs / 1000)
+  if (total < 60) return `${total}s`
+  const m = Math.floor(total / 60)
+  const r = total % 60
+  return `${m}m ${r.toString().padStart(2, "0")}s`
+}
+
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-border/50 py-2.5 last:border-0">
       <span className="text-sm text-muted-foreground">{label}</span>
       <span className="truncate text-right text-sm font-medium">{value}</span>
-    </div>
-  )
-}
-
-function Placeholder({ title }: { title: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed py-16 text-center">
-      <p className="text-sm font-medium">{title}</p>
-      <p className="text-xs text-muted-foreground">Docker fazında gelecek.</p>
     </div>
   )
 }

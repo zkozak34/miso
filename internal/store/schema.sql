@@ -37,5 +37,17 @@ CREATE TABLE IF NOT EXISTS applications (
     updated_at      INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS deployments (
+    id             TEXT PRIMARY KEY,
+    application_id TEXT NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+    status         TEXT NOT NULL DEFAULT 'building',
+    image          TEXT NOT NULL DEFAULT '',
+    trigger_kind   TEXT NOT NULL DEFAULT 'manual',
+    error          TEXT NOT NULL DEFAULT '',
+    started_at     INTEGER NOT NULL,
+    finished_at    INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE INDEX IF NOT EXISTS idx_environments_project ON environments(project_id);
 CREATE INDEX IF NOT EXISTS idx_applications_environment ON applications(environment_id);
+CREATE INDEX IF NOT EXISTS idx_deployments_application ON deployments(application_id);

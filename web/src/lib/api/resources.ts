@@ -106,6 +106,18 @@ export interface UpdateApplicationInput {
   restartPolicy: RestartPolicy
 }
 
+export interface Deployment {
+  id: string
+  applicationId: string
+  status: ResourceStatus
+  image: string
+  trigger: string
+  error?: string
+  startedAt: number
+  finishedAt: number
+  durationMs: number
+}
+
 export interface AppStats {
   cpuPercent: number
   memoryUsage: number
@@ -177,3 +189,5 @@ export const getApplicationStats = (id: string) =>
   request<AppStats>(`/api/applications/${id}/stats`)
 export const getApplicationLogs = (id: string) =>
   request<{ logs: string }>(`/api/applications/${id}/logs`)
+export const listDeployments = (id: string) =>
+  request<Deployment[]>(`/api/applications/${id}/deployments`)

@@ -16,6 +16,7 @@ import {
   getEnvironment,
   getProject,
   listApplications,
+  listDeployments,
   listEnvironments,
   listProjects,
   listTemplates,
@@ -153,6 +154,16 @@ export function useApplicationLogs(id: string, poll: boolean) {
     enabled: !!id,
     retry: false,
     refetchInterval: poll ? 3000 : false,
+  })
+}
+
+export function useDeployments(id: string, poll: boolean) {
+  return useQuery({
+    queryKey: ["applications", id, "deployments"],
+    queryFn: () => listDeployments(id),
+    enabled: !!id,
+    retry: false,
+    refetchInterval: poll ? 2000 : false,
   })
 }
 
