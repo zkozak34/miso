@@ -9,6 +9,7 @@ import {
   deleteApplication,
   deleteEnvironment,
   deleteProject,
+  type EnvVar,
   getApplication,
   getApplicationLogs,
   getApplicationStats,
@@ -19,6 +20,7 @@ import {
   listProjects,
   type UpdateApplicationInput,
   updateApplication,
+  updateApplicationEnv,
 } from "@/lib/api/resources"
 
 export const keys = {
@@ -175,6 +177,17 @@ export function useUpdateApplication(id: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: UpdateApplicationInput) => updateApplication(id, input),
+    onSuccess: (app) => {
+      qc.setQueryData(keys.application(id), app)
+      qc.invalidateQueries({ queryKey: keys.applications(app.environmentId) })
+    },
+  })
+}
+
+export function useUpdateApplicationEnv(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (envVars: EnvVar[]) => updateApplicationEnv(id, envVars),
     onSuccess: (app) => {
       qc.setQueryData(keys.application(id), app)
       qc.invalidateQueries({ queryKey: keys.applications(app.environmentId) })

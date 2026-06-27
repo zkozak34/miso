@@ -60,6 +60,7 @@ type Application struct {
 	ContainerID    string            `json:"containerId,omitempty"`
 	LastError      string            `json:"lastError,omitempty"`
 	RestartPolicy  string            `json:"restartPolicy"`
+	EnvVars        []EnvVar          `json:"envVars"`
 	Status         string            `json:"status"`
 	ProjectID      string            `json:"projectId,omitempty"`
 	ProjectName    string            `json:"projectName,omitempty"`
@@ -67,6 +68,14 @@ type Application struct {
 	ContainerName  string            `json:"containerName,omitempty"`
 	CreatedAt      int64             `json:"createdAt"`
 	UpdatedAt      int64             `json:"updatedAt"`
+}
+
+// EnvVar is a runtime environment variable injected into the container. Secret
+// only controls UI masking; the value is stored and returned as-is.
+type EnvVar struct {
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+	Secret bool   `json:"secret"`
 }
 
 type ApplicationInput struct {

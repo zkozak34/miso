@@ -124,6 +124,7 @@ func (s *Server) runDeploy(app store.Application, image, gitURL string, lb *buil
 		HostPort:      derefPort(app.HostPort),
 		ContainerPort: derefPort(app.ContainerPort),
 		RestartPolicy: app.RestartPolicy,
+		Env:           envSlice(app.EnvVars),
 		Labels:        labels,
 	})
 	if err != nil {
@@ -331,6 +332,18 @@ func (s *Server) removeProjectContainers(ctx context.Context, pid string) {
 	for _, e := range envs {
 		s.removeEnvContainers(ctx, e)
 	}
+}
+
+// envSlice converts stored env vars into Docker's "KEY=VALUE" form.
+func envSlice(vars []store.EnvVar) []string {
+	if len(vars) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(vars))
+	for _, v := range vars {
+		out = append(out, v.Key+"="+v.Value)
+	}
+	return out
 }
 
 func derefPort(p *int) int {

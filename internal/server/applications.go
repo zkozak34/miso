@@ -68,6 +68,21 @@ func (s *Server) handleUpdateApplication(w http.ResponseWriter, r *http.Request)
 	writeJSON(w, a)
 }
 
+func (s *Server) handleUpdateApplicationEnv(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		EnvVars []store.EnvVar `json:"envVars"`
+	}
+	if !decodeJSON(w, r, &in) {
+		return
+	}
+	a, err := s.store.UpdateApplicationEnv(chi.URLParam(r, "aid"), in.EnvVars)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, a)
+}
+
 func (s *Server) handleDeleteApplication(w http.ResponseWriter, r *http.Request) {
 	aid := chi.URLParam(r, "aid")
 	if s.docker != nil {

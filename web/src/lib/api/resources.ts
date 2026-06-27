@@ -26,6 +26,12 @@ export type AppSource = "git" | "docker" | "template"
 
 export type RestartPolicy = "no" | "on-failure" | "unless-stopped" | "always"
 
+export interface EnvVar {
+  key: string
+  value: string
+  secret: boolean
+}
+
 export interface Application {
   id: string
   environmentId: string
@@ -40,6 +46,7 @@ export interface Application {
   hostPort: number | null
   containerPort: number | null
   restartPolicy: RestartPolicy
+  envVars: EnvVar[]
   lastError?: string
   status: ResourceStatus
   projectId?: string
@@ -124,6 +131,11 @@ export const updateApplication = (id: string, input: UpdateApplicationInput) =>
   request<Application>(`/api/applications/${id}`, {
     method: "PATCH",
     body: JSON.stringify(input),
+  })
+export const updateApplicationEnv = (id: string, envVars: EnvVar[]) =>
+  request<Application>(`/api/applications/${id}/env`, {
+    method: "PUT",
+    body: JSON.stringify({ envVars }),
   })
 export const deleteApplication = (id: string) =>
   request<void>(`/api/applications/${id}`, { method: "DELETE" })

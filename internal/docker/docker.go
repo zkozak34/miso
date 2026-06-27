@@ -122,6 +122,7 @@ type RunSpec struct {
 	HostPort      int
 	ContainerPort int
 	RestartPolicy string
+	Env           []string
 	Labels        map[string]string
 }
 
@@ -132,6 +133,7 @@ func (c *Client) Run(ctx context.Context, spec RunSpec) (string, error) {
 
 	cfg := &container.Config{
 		Image:  spec.Image,
+		Env:    spec.Env,
 		Labels: spec.Labels,
 	}
 	policy := container.RestartPolicyMode(spec.RestartPolicy)
