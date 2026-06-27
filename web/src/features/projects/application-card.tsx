@@ -14,7 +14,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import {
   DropdownMenu,
@@ -42,15 +41,15 @@ export function ApplicationCard({ app, to }: { app: Application; to: string }) {
   return (
     <Card
       onClick={() => navigate(to)}
-      className="cursor-pointer gap-3 p-5 transition-colors hover:border-primary/40"
+      className="cursor-pointer gap-3 p-4 transition-colors hover:border-border-strong"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-mono text-base font-semibold tracking-tight">{app.name}</h3>
-          <Badge variant="secondary" className="gap-1 font-normal">
-            <SourceIcon className="h-3 w-3" />
-            {source.label}
-          </Badge>
+          <h3 className="font-mono text-[14.5px] font-medium tracking-tight">{app.name}</h3>
+          <span className="inline-flex h-5 flex-none items-center gap-1.5 rounded-[5px] border bg-surface-2 px-1.5">
+            <SourceIcon className="h-3 w-3 text-text-tertiary" />
+            <span className="text-[10.5px] font-medium text-muted-foreground">{source.label}</span>
+          </span>
         </div>
         <div className="flex items-center gap-1.5">
           <StatusBadge status={app.status} />

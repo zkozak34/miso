@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { fetchSystemInfo } from "@/lib/api"
 import {
   applicationAction,
   type CreateApplicationInput,
@@ -23,6 +24,15 @@ export const keys = {
   environment: (id: string) => ["environments", id] as const,
   applications: (envId: string) => ["environments", envId, "applications"] as const,
   application: (id: string) => ["applications", id] as const,
+}
+
+// ---- System ----
+export function useSystemInfo() {
+  return useQuery({
+    queryKey: ["system-info"],
+    queryFn: () => fetchSystemInfo(),
+    staleTime: 60_000,
+  })
 }
 
 // ---- Projects ----

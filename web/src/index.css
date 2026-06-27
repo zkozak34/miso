@@ -3,64 +3,97 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  "Helmsman" design system — near-black layered surfaces, orange accent,
+  Geist + Geist Mono. Light theme mirrors it. shadcn semantic tokens are mapped
+  onto the Helmsman palette so every component inherits the look.
+*/
+
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+
+  /* Helmsman — light */
+  --background: #eceef1;
+  --foreground: #24262b;
+  --card: #ffffff;
+  --card-foreground: #24262b;
+  --popover: #ffffff;
+  --popover-foreground: #24262b;
+  --primary: #f0820a;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #24262b;
+  --muted: #f4f5f7;
+  --muted-foreground: #62646d;
+  --accent: #eef0f3;
+  --accent-foreground: #16171b;
+  --destructive: #dc4f4f;
+  --border: #e4e6ea;
+  --input: #d7d9df;
+  --ring: #f0820a;
+
+  /* Helmsman extras */
+  --surface-2: #ffffff;
+  --surface-raised: #f3f4f6;
+  --border-strong: #c6c9d1;
+  --text-tertiary: #82848d;
+  --gridline: #e9ebee;
+  --topbar: rgba(255, 255, 255, 0.82);
+  --scrim: rgba(40, 42, 48, 0.34);
+
+  --chart-1: #f0820a;
+  --chart-2: #0ea96d;
+  --chart-3: #3b82f6;
+  --chart-4: #d99409;
+  --chart-5: #dc4f4f;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  /* Helmsman — dark */
+  --background: #08080a;
+  --foreground: #e7e7ec;
+  --card: #101014;
+  --card-foreground: #e7e7ec;
+  --popover: #15151a;
+  --popover-foreground: #e7e7ec;
+  --primary: #fb923c;
+  --primary-foreground: #08080a;
+  --secondary: #15151a;
+  --secondary-foreground: #e7e7ec;
+  --muted: #101014;
+  --muted-foreground: #9a9aa3;
+  --accent: #16161c;
+  --accent-foreground: #f2f2f5;
+  --destructive: #f87171;
+  --border: #1c1c22;
+  --input: #26262d;
+  --ring: #fb923c;
+
+  /* Helmsman extras */
+  --surface-2: #0b0b0e;
+  --surface-raised: #15151a;
+  --border-strong: #2e2e36;
+  --text-tertiary: #7a7a83;
+  --gridline: #1a1a1f;
+  --topbar: rgba(10, 10, 12, 0.82);
+  --scrim: rgba(5, 5, 7, 0.6);
+
+  --chart-1: #fb923c;
+  --chart-2: #34d399;
+  --chart-3: #60a5fa;
+  --chart-4: #fbbf24;
+  --chart-5: #f87171;
 }
 
 @theme inline {
+  --font-sans: "Geist", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -79,6 +112,13 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --color-surface-2: var(--surface-2);
+  --color-surface-raised: var(--surface-raised);
+  --color-border-strong: var(--border-strong);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-gridline: var(--gridline);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -89,11 +129,28 @@
 @layer base {
   * {
     border-color: var(--border);
-    outline-color: color-mix(in oklch, var(--ring) 50%, transparent);
+    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
   }
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv01", "ss01";
+  }
+  ::selection {
+    background: rgba(251, 146, 60, 0.32);
+  }
+}
+
+@keyframes ringPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  70%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
   }
 }

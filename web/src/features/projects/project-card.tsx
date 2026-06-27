@@ -9,7 +9,7 @@ export function ProjectCard({ project }: { project: Project }) {
   return (
     <Card
       onClick={() => navigate(`/projects/${project.id}`)}
-      className="cursor-pointer gap-3 p-5 transition-colors hover:border-primary/40"
+      className="cursor-pointer gap-3.5 p-[17px] transition-all duration-150 hover:-translate-y-px hover:border-border-strong"
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="font-mono text-base font-semibold tracking-tight">{project.name}</h3>

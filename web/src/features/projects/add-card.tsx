@@ -5,12 +5,12 @@ export function AddCard({ label, onClick }: { label: string; onClick: () => void
     <button
       type="button"
       onClick={onClick}
-      className="group flex min-h-[104px] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+      className="group flex min-h-[104px] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border-strong bg-surface-2 text-text-tertiary transition-colors hover:border-primary hover:bg-card hover:text-primary"
     >
-      <span className="flex h-9 w-9 items-center justify-center rounded-md bg-muted transition-colors group-hover:bg-accent">
+      <span className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] border border-border-strong bg-card text-xl font-light leading-none">
         <Plus className="h-4 w-4" />
       </span>
-      <span className="text-sm">{label}</span>
+      <span className="text-[12.5px] font-medium">{label}</span>
     </button>
   )
 }

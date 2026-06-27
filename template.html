@@ -1,0 +1,2281 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Helmsman</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #08080a;
+        --surface-2: #0b0b0e;
+        --surface-inset: #0a0a0c;
+        --surface-card: #101014;
+        --surface-raised: #15151a;
+        --surface-hover: #16161c;
+        --surface-hover2: #1c1c22;
+        --border-main: #18181d;
+        --border-card: #1c1c22;
+        --border-input: #26262d;
+        --border-strong: #2e2e36;
+        --border-inner: #16161b;
+        --gridline: #1a1a1f;
+        --text-primary: #f2f2f5;
+        --text-body: #e7e7ec;
+        --text-muted: #cfcfd6;
+        --text-secondary: #9a9aa3;
+        --text-tertiary: #7a7a83;
+        --text-faint: #62626b;
+        --text-ghost: #46464e;
+        --text-mono-faint: #4a4a52;
+        --on-accent: #08080a;
+        --topbar: rgba(10, 10, 12, 0.82);
+        --scrim: rgba(5, 5, 7, 0.6);
+      }
+      :root[data-theme="light"] {
+        --bg: #eceef1;
+        --surface-2: #ffffff;
+        --surface-inset: #f4f5f7;
+        --surface-card: #ffffff;
+        --surface-raised: #f3f4f6;
+        --surface-hover: #eef0f3;
+        --surface-hover2: #e7e9ee;
+        --border-main: #e4e6ea;
+        --border-card: #e9eaee;
+        --border-input: #d7d9df;
+        --border-strong: #c6c9d1;
+        --border-inner: #eef0f2;
+        --gridline: #e9ebee;
+        --text-primary: #16171b;
+        --text-body: #24262b;
+        --text-muted: #3d3f46;
+        --text-secondary: #62646d;
+        --text-tertiary: #82848d;
+        --text-faint: #9a9ca5;
+        --text-ghost: #b6b8bf;
+        --text-mono-faint: #a4a6ae;
+        --on-accent: #1f1206;
+        --topbar: rgba(255, 255, 255, 0.82);
+        --scrim: rgba(40, 42, 48, 0.34);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text-body);
+        font-family: "Geist", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        font-feature-settings: "cv01", "ss01";
+      }
+      ::selection {
+        background: rgba(251, 146, 60, 0.32);
+      }
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border-input);
+        border-radius: 6px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--border-strong);
+        border: 2px solid transparent;
+        background-clip: padding-box;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      input,
+      button,
+      textarea,
+      select {
+        font-family: inherit;
+        font-size: inherit;
+        color: inherit;
+      }
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+      }
+      @keyframes dotPulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 var(--pc);
+        }
+        50% {
+          box-shadow: 0 0 0 4px transparent;
+        }
+      }
+      @keyframes ringPulse {
+        0% {
+          transform: scale(1);
+          opacity: 0.7;
+        }
+        70%,
+        100% {
+          transform: scale(2.4);
+          opacity: 0;
+        }
+      }
+      @keyframes blink {
+        0%,
+        49% {
+          opacity: 1;
+        }
+        50%,
+        100% {
+          opacity: 0;
+        }
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes modalPop {
+        from {
+          opacity: 0;
+          transform: translateY(8px) scale(0.985);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes sheetUp {
+        from {
+          transform: translateY(100%);
+        }
+        to {
+          transform: none;
+        }
+      }
+      @keyframes drawerIn {
+        from {
+          transform: translateX(100%);
+        }
+        to {
+          transform: none;
+        }
+      }
+      @keyframes skel {
+        0% {
+          background-position: -200% 0;
+        }
+        100% {
+          background-position: 200% 0;
+        }
+      }
+      .skel {
+        background: linear-gradient(90deg, var(--surface-card) 25%, var(--surface-raised) 37%, var(--surface-card) 63%);
+        background-size: 200% 100%;
+        animation: skel 1.5s ease-in-out infinite;
+        border-radius: 8px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // ─── handler registry ──────────────────────────────────────────────
+      const H = {};
+      let _hi = 0;
+      function h(fn) {
+        if (!fn) return "";
+        const id = "h" + _hi++;
+        H[id] = fn;
+        return `data-h="${id}"`;
+      }
+      function hi(fn) {
+        if (!fn) return "";
+        const id = "h" + _hi++;
+        H[id] = fn;
+        return `data-hi="${id}"`;
+      }
+      function hf(fn) {
+        if (!fn) return "";
+        const id = "h" + _hi++;
+        H[id] = fn;
+        return `data-hf="${id}"`;
+      }
+
+      // ─── event delegation ──────────────────────────────────────────────
+      document.addEventListener("click", (e) => {
+        const el = e.target.closest("[data-h]");
+        if (el) {
+          const fn = H[el.dataset.h];
+          if (fn) fn(e);
+        }
+      });
+      document.addEventListener("input", (e) => {
+        const el = e.target.closest("[data-hi]");
+        if (el) {
+          const fn = H[el.dataset.hi];
+          if (fn) fn(e);
+        }
+      });
+      document.addEventListener("submit", (e) => {
+        const el = e.target.closest("[data-hf]");
+        if (el) {
+          e.preventDefault();
+          const fn = H[el.dataset.hf];
+          if (fn) fn(e);
+        }
+      });
+      // hover via mouseover/mouseout
+      document.addEventListener("mouseover", (e) => {
+        const el = e.target.closest("[data-hov]");
+        if (!el) return;
+        el._baseStyle = el._baseStyle ?? el.getAttribute("style") ?? "";
+        el.style.cssText = el._baseStyle + ";" + el.dataset.hov;
+      });
+      document.addEventListener("mouseout", (e) => {
+        const el = e.target.closest("[data-hov]");
+        if (!el) return;
+        if (!el.contains(e.relatedTarget)) el.style.cssText = el._baseStyle ?? "";
+      });
+
+      // ─── STATUS / TYPE meta ────────────────────────────────────────────
+      const STATUS = {
+        running: { c: "#34d399", l: "Running", anim: false },
+        building: { c: "#fbbf24", l: "Building", anim: true },
+        queued: { c: "#fbbf24", l: "Queued", anim: true },
+        deploying: { c: "#60a5fa", l: "Deploying", anim: true },
+        restarting: { c: "#60a5fa", l: "Restarting", anim: true },
+        stopped: { c: "var(--text-tertiary)", l: "Stopped", anim: false },
+        failed: { c: "#f87171", l: "Failed", anim: false },
+        exited: { c: "#f87171", l: "Exited", anim: false },
+      };
+      const TYPE = {
+        git: { l: "Git", c: "var(--text-secondary)", icon: "⎇" },
+        docker: { l: "Docker", c: "#60a5fa", icon: "❒" },
+        template: { l: "Template", c: "#a78bfa", icon: "◆" },
+      };
+      function sdStatus(key) {
+        const x = STATUS[key] || STATUS.stopped;
+        return { color: x.c, label: x.l, anim: !!x.anim };
+      }
+      function sdType(key) {
+        const x = TYPE[key] || TYPE.docker;
+        return { label: x.l, color: x.c, icon: x.icon };
+      }
+
+      // ─── state ─────────────────────────────────────────────────────────
+      let state = {
+        view: "app",
+        route: { screen: "dashboard" },
+        appTab: "overview",
+        tick: 0,
+        width: window.innerWidth,
+        sidebarCollapsed: false,
+        drawerOpen: false,
+        userMenuOpen: false,
+        menuFor: null,
+        addAppOpen: false,
+        addAppTab: "git",
+        addAppErr: {},
+        addForm: {},
+        newProjectOpen: false,
+        npName: "",
+        npErr: "",
+        newEnvOpen: false,
+        neName: "",
+        neErr: "",
+        confirm: null,
+        buildDrawer: null,
+        loading: false,
+        logsFollow: true,
+        logFilter: "",
+        logSel: null,
+        envDraft: null,
+        setupUser: "",
+        setupPass: "",
+        setupError: "",
+        loginUser: "",
+        loginPass: "",
+        loginError: "",
+        theme: "dark",
+        toasts: [],
+        addTplReveal: false,
+      };
+
+      // ─── seed data ──────────────────────────────────────────────────────
+      function seedHist(base, jit, n = 48, max = 100) {
+        const a = [];
+        let v = base;
+        for (let i = 0; i < n; i++) {
+          v += (Math.random() - 0.5) * jit;
+          v = Math.max(2, Math.min(max, v));
+          a.push(v);
+        }
+        return a;
+      }
+      function mkApp(o) {
+        return Object.assign(
+          { cpuHist: seedHist(o.cpu || 8, 6, 48), memHist: seedHist(o.mem || 120, 24, 48, o.memLimit || 512), env: [], deployments: [], logs: [] },
+          o,
+        );
+      }
+      let model = (function () {
+        const sfw = mkApp({
+          id: "sf-web",
+          name: "web",
+          type: "git",
+          status: "running",
+          repo: "github.com/acme/storefront",
+          branch: "main",
+          dockerfile: "Dockerfile",
+          container: "storefront-production-web",
+          cpu: 14,
+          mem: 198,
+          memLimit: 512,
+          ports: [{ host: 8080, container: 3000, proto: "TCP" }],
+        });
+        sfw.env = [
+          { key: "NODE_ENV", value: "production", secret: false },
+          { key: "PORT", value: "3000", secret: false },
+          { key: "DATABASE_URL", value: "postgres://app:s3cr3t@postgres:5432/store", secret: true },
+          { key: "SESSION_SECRET", value: "a91f2c0bd4e7", secret: true },
+          { key: "LOG_LEVEL", value: "info", secret: false },
+        ];
+        sfw.deployments = [
+          { id: "d1", status: "running", tag: "sha-9f3c1a2", trigger: "push · main", started: "Jun 27 09:42", finished: "Jun 27 09:44", dur: "1m 58s" },
+          { id: "d2", status: "exited", tag: "sha-7b1e004", trigger: "push · main", started: "Jun 26 17:10", finished: "Jun 26 17:12", dur: "2m 04s" },
+          { id: "d3", status: "running", tag: "sha-44ade19", trigger: "manual", started: "Jun 26 11:23", finished: "Jun 26 11:25", dur: "1m 51s" },
+          { id: "d4", status: "failed", tag: "sha-21c0f8b", trigger: "push · main", started: "Jun 25 22:01", finished: "Jun 25 22:02", dur: "47s" },
+        ];
+        const sfa = mkApp({
+          id: "sf-api",
+          name: "api",
+          type: "git",
+          status: "running",
+          repo: "github.com/acme/storefront-api",
+          branch: "main",
+          dockerfile: "docker/Dockerfile",
+          container: "storefront-production-api",
+          cpu: 22,
+          mem: 312,
+          memLimit: 768,
+          ports: [{ host: 8081, container: 4000, proto: "TCP" }],
+        });
+        sfa.env = [
+          { key: "NODE_ENV", value: "production", secret: false },
+          { key: "DATABASE_URL", value: "postgres://app:s3cr3t@postgres:5432/store", secret: true },
+          { key: "REDIS_URL", value: "redis://redis:6379", secret: false },
+        ];
+        const sfpg = mkApp({
+          id: "sf-pg",
+          name: "postgres",
+          type: "template",
+          status: "running",
+          image: "postgres:16-alpine",
+          container: "storefront-production-postgres",
+          cpu: 6,
+          mem: 142,
+          memLimit: 1024,
+          ports: [{ host: 5433, container: 5432, proto: "TCP" }],
+        });
+        sfpg.env = [
+          { key: "POSTGRES_USER", value: "app", secret: false },
+          { key: "POSTGRES_PASSWORD", value: "s3cr3t-pg-pw", secret: true },
+          { key: "POSTGRES_DB", value: "store", secret: false },
+        ];
+        const sfr = mkApp({
+          id: "sf-redis",
+          name: "redis",
+          type: "docker",
+          status: "running",
+          image: "redis:7-alpine",
+          container: "storefront-production-redis",
+          cpu: 3,
+          mem: 38,
+          memLimit: 256,
+          ports: [{ host: 6380, container: 6379, proto: "TCP" }],
+        });
+        const sfsw = mkApp({
+          id: "sfs-web",
+          name: "web",
+          type: "git",
+          status: "building",
+          repo: "github.com/acme/storefront",
+          branch: "develop",
+          dockerfile: "Dockerfile",
+          container: "storefront-staging-web",
+          cpu: 9,
+          mem: 96,
+          memLimit: 512,
+          ports: [{ host: 8090, container: 3000, proto: "TCP" }],
+        });
+        const sfspg = mkApp({
+          id: "sfs-pg",
+          name: "postgres",
+          type: "template",
+          status: "running",
+          image: "postgres:16-alpine",
+          container: "storefront-staging-postgres",
+          cpu: 4,
+          mem: 118,
+          memLimit: 512,
+          ports: [{ host: 5434, container: 5432, proto: "TCP" }],
+        });
+        const ang = mkApp({
+          id: "an-graf",
+          name: "grafana",
+          type: "docker",
+          status: "running",
+          image: "grafana/grafana:11.1.0",
+          container: "analytics-production-grafana",
+          cpu: 11,
+          mem: 176,
+          memLimit: 512,
+          ports: [{ host: 3001, container: 3000, proto: "TCP" }],
+        });
+        const anch = mkApp({
+          id: "an-ch",
+          name: "clickhouse",
+          type: "docker",
+          status: "stopped",
+          image: "clickhouse/clickhouse-server:24.6",
+          container: "analytics-production-clickhouse",
+          cpu: 0,
+          mem: 0,
+          memLimit: 2048,
+          ports: [
+            { host: 8123, container: 8123, proto: "TCP" },
+            { host: 9000, container: 9000, proto: "TCP" },
+          ],
+        });
+        const aning = mkApp({
+          id: "an-ing",
+          name: "ingest",
+          type: "git",
+          status: "failed",
+          repo: "github.com/acme/ingest",
+          branch: "main",
+          dockerfile: "Dockerfile",
+          container: "analytics-production-ingest",
+          cpu: 0,
+          mem: 0,
+          memLimit: 512,
+          ports: [{ host: 7070, container: 7070, proto: "TCP" }],
+        });
+        aning.deployments = [
+          { id: "i1", status: "failed", tag: "sha-0c19a7f", trigger: "push · main", started: "Jun 27 08:14", finished: "Jun 27 08:14", dur: "31s" },
+          { id: "i2", status: "running", tag: "sha-bb2740d", trigger: "manual", started: "Jun 24 14:02", finished: "Jun 24 14:04", dur: "1m 40s" },
+        ];
+        return {
+          host: {
+            cpu: seedHist(34, 12, 48),
+            ram: seedHist(58, 8, 48),
+            disk: seedHist(28, 1.2, 48),
+            netIn: seedHist(40, 30, 48, 260),
+            netOut: seedHist(22, 22, 48, 260),
+            cores: 12,
+            ramTotal: 16,
+            diskTotal: 512,
+          },
+          sys: {
+            hostname: "node-01",
+            os: "Ubuntu 24.04.1 LTS",
+            kernel: "6.8.0-31-generic",
+            arch: "x86_64",
+            cpu: "AMD Ryzen 9 7900",
+            cores: 12,
+            ram: "16 GB",
+            uptime: "23d 4h 11m",
+            docker: "27.1.1",
+          },
+          projects: [
+            {
+              id: "storefront",
+              name: "storefront",
+              envs: [
+                { id: "production", name: "production", apps: [sfw, sfa, sfpg, sfr] },
+                { id: "staging", name: "staging", apps: [sfsw, sfspg] },
+              ],
+            },
+            { id: "analytics", name: "analytics", envs: [{ id: "production", name: "production", apps: [ang, anch, aning] }] },
+            { id: "sandbox", name: "sandbox", envs: [] },
+          ],
+        };
+      })();
+
+      // ─── helpers ────────────────────────────────────────────────────────
+      function eachApp(fn) {
+        model.projects.forEach((p) => p.envs.forEach((e) => e.apps.forEach(fn)));
+      }
+      function findApp(id) {
+        let f = null;
+        eachApp((a) => {
+          if (a.id === id) f = a;
+        });
+        return f;
+      }
+      function currentProject() {
+        return model.projects.find((p) => p.id === state.route.projectId);
+      }
+      function currentEnv() {
+        const p = currentProject();
+        return p && p.envs.find((e) => e.id === state.route.envId);
+      }
+      function currentApp() {
+        return findApp(state.route.appId);
+      }
+      function push(arr, v, max = 48) {
+        arr.push(v);
+        if (arr.length > max) arr.shift();
+      }
+      function rollup(apps) {
+        if (!apps || !apps.length) return "stopped";
+        const st = apps.map((a) => a.status);
+        if (st.includes("failed") || st.includes("exited")) return "failed";
+        if (st.includes("building") || st.includes("queued")) return "building";
+        if (st.includes("deploying") || st.includes("restarting")) return "deploying";
+        if (st.includes("running")) return "running";
+        return "stopped";
+      }
+      function projectRollup(p) {
+        let apps = [];
+        p.envs.forEach((e) => {
+          apps = apps.concat(e.apps);
+        });
+        return rollup(apps);
+      }
+      function imgOf(a) {
+        return a.type === "git" ? a.repo : a.image || "";
+      }
+      function portsLabel(a) {
+        if (!a.ports || !a.ports.length) return "No exposed ports";
+        return a.ports.map((p) => p.host + ":" + p.container).join("  ");
+      }
+      function envOf(a) {
+        let f = null;
+        model.projects.forEach((p) =>
+          p.envs.forEach((e) => {
+            if (e.apps.includes(a)) f = e;
+          }),
+        );
+        return f;
+      }
+      function fmtNet(v) {
+        return v >= 100 ? v.toFixed(0) : v.toFixed(1);
+      }
+      function fmtKB(v) {
+        return v < 1000 ? v.toFixed(0) + " KB/s" : (v / 1000).toFixed(1) + " MB/s";
+      }
+
+      // ─── path helper (for SVG charts) ──────────────────────────────────
+      function makePath(arr, w, h, max) {
+        const n = arr.length,
+          mx = max || Math.max(...arr.concat(1)) * 1.18;
+        const pts = arr.map((v, i) => [(i / (n - 1)) * w, h - (Math.max(0, v) / mx) * h]);
+        const line = "M" + pts.map((p) => p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" L");
+        const area = line + " L" + w + " " + h + " L0 " + h + " Z";
+        const last = pts[pts.length - 1];
+        return { line, area, lastX: last[0].toFixed(1), lastY: last[1].toFixed(1) };
+      }
+
+      // ─── actions ───────────────────────────────────────────────────────
+      function setState(patch) {
+        if (typeof patch === "function") state = Object.assign({}, state, patch(state));
+        else state = Object.assign({}, state, patch);
+        scheduleRender();
+      }
+      function go(screen, ids = {}) {
+        setState({
+          route: Object.assign({ screen }, ids),
+          userMenuOpen: false,
+          drawerOpen: false,
+          menuFor: null,
+          loading: true,
+          appTab: ids.appTab || "overview",
+        });
+        clearTimeout(window._load);
+        window._load = setTimeout(() => setState({ loading: false }), 430);
+      }
+
+      let toastId = 0;
+      function toast(type, msg) {
+        const id = "t" + toastId++;
+        const map = { info: "#60a5fa", success: "#34d399", error: "#f87171", warn: "#fbbf24" };
+        setState((s) => ({ toasts: [...(s.toasts || []), { id, type, msg, color: map[type] || "#fb923c", spin: type === "info", dot: type !== "info" }] }));
+        setTimeout(() => setState((s) => ({ toasts: (s.toasts || []).filter((t) => t.id !== id) })), 3400);
+      }
+      function setStatus(a, st) {
+        a.status = st;
+        setState((s) => ({ tick: s.tick + 1 }));
+      }
+      function startApp(a) {
+        setStatus(a, "running");
+        for (let i = 0; i < 6; i++) a.logs.push(mkLog(a));
+        toast("success", "Started " + a.name);
+      }
+      function stopApp(a) {
+        a.cpuHist = a.cpuHist.map(() => 0);
+        setStatus(a, "stopped");
+        toast("success", "Stopped " + a.name);
+      }
+      function restartApp(a) {
+        toast("info", "Restarting " + a.name + "…");
+        setStatus(a, "restarting");
+        clearTimeout(a._t);
+        a._t = setTimeout(() => {
+          setStatus(a, "running");
+          toast("success", "Restarted " + a.name);
+        }, 1600);
+      }
+
+      function buildScript(a) {
+        const sha = Math.random().toString(16).slice(2, 9);
+        if (a.type === "git")
+          return [
+            { t: "Cloning " + a.repo + " (" + a.branch + ")", k: "info", phase: "Build", d: 500 },
+            { t: "Checked out " + sha, k: "dim", d: 300 },
+            { t: "Step 1/6 : FROM node:20-alpine", k: "dim", d: 380 },
+            { t: "Step 2/6 : WORKDIR /app", k: "dim", d: 260 },
+            { t: "Step 3/6 : COPY package*.json ./", k: "dim", d: 300 },
+            { t: "Step 4/6 : RUN npm ci", k: "dim", d: 520 },
+            { t: "added 642 packages in 18s", k: "info", d: 500 },
+            { t: "Step 5/6 : COPY . .", k: "dim", d: 300 },
+            { t: "Step 6/6 : RUN npm run build", k: "dim", d: 520 },
+            { t: "✓ build complete (4.2 MB)", k: "ok", d: 400 },
+            { t: "Pushing image storefront/" + a.name + ":" + sha, k: "info", phase: "Deploy", d: 460 },
+            { t: "Stopping previous container", k: "dim", d: 340 },
+            { t: "Starting " + a.container, k: "info", d: 420 },
+            { t: "Health check passed on :" + (a.ports[0] ? a.ports[0].host : "-"), k: "ok", d: 420 },
+          ];
+        return [
+          { t: "Pulling image " + a.image, k: "info", phase: "Deploy", d: 520 },
+          { t: "Digest: sha256:" + Math.random().toString(16).slice(2, 14), k: "dim", d: 360 },
+          { t: "Creating " + a.container, k: "dim", d: 380 },
+          { t: "Starting " + a.container, k: "info", d: 420 },
+          { t: "Health check passed on :" + (a.ports[0] ? a.ports[0].host : "-"), k: "ok", d: 420 },
+        ];
+      }
+      function deployApp(a) {
+        toast("info", "Deploying " + a.name + "…");
+        const steps = buildScript(a);
+        const bd = { appId: a.id, appName: a.name, lines: [], phase: "Build", pct: 0, done: false };
+        setStatus(a, "building");
+        setState({ buildDrawer: bd });
+        let i = 0;
+        function run() {
+          if (i >= steps.length) {
+            a.status = "running";
+            bd.done = true;
+            bd.pct = 100;
+            bd.phase = "Done";
+            a.deployments.unshift({
+              id: "d" + Date.now(),
+              status: "running",
+              tag: "sha-" + Math.random().toString(16).slice(2, 9),
+              trigger: "manual",
+              started: new Date().toTimeString().slice(0, 5),
+              finished: new Date(Date.now() + 118000).toTimeString().slice(0, 5),
+              dur: "1m 58s",
+            });
+            toast("success", "Deployed " + a.name);
+            setState((s) => ({ tick: s.tick + 1 }));
+            return;
+          }
+          const st = steps[i];
+          bd.lines.push(st);
+          bd.pct = Math.round(((i + 1) / steps.length) * 100);
+          if (st.phase) bd.phase = st.phase;
+          if (st.phase === "Deploy" && a.status !== "deploying") a.status = "deploying";
+          i++;
+          setState((s) => ({ tick: s.tick + 1, buildDrawer: bd }));
+          window._b = setTimeout(run, st.d || 420);
+        }
+        run();
+      }
+      function askDelete(a) {
+        setState({
+          confirm: {
+            title: "Remove " + a.name + "?",
+            body: "This stops and deletes the container " + a.container + " and its configuration. Volumes are not removed. This can't be undone.",
+            confirmLabel: "Remove application",
+            danger: true,
+            onConfirm: () => {
+              const e2 = envOf(a);
+              if (e2) e2.apps = e2.apps.filter((x) => x.id !== a.id);
+              setState({ confirm: null });
+              toast("success", "Removed " + a.name);
+              go("environment", { projectId: state.route.projectId, envId: state.route.envId || (e2 && e2.id) });
+            },
+          },
+        });
+      }
+      function askDeleteProject(p) {
+        setState({
+          confirm: {
+            title: "Delete " + p.name + "?",
+            body:
+              "This permanently deletes the project and all " +
+              p.envs.reduce((n, e) => n + e.apps.length, 0) +
+              " application(s) inside it. This can't be undone.",
+            confirmLabel: "Delete project",
+            danger: true,
+            onConfirm: () => {
+              model.projects = model.projects.filter((x) => x.id !== p.id);
+              setState({ confirm: null });
+              toast("success", "Deleted " + p.name);
+              go("projects");
+            },
+          },
+        });
+      }
+      function createProject() {
+        const name = state.npName.trim();
+        if (!name) return setState({ npErr: "Enter a project name." });
+        if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) return setState({ npErr: "Use lowercase letters, numbers and hyphens." });
+        if (model.projects.some((p) => p.id === name)) return setState({ npErr: "A project with this name already exists." });
+        model.projects.push({ id: name, name, envs: [] });
+        setState({ newProjectOpen: false, npName: "", npErr: "" });
+        toast("success", "Created " + name);
+        go("project", { projectId: name });
+      }
+      function createEnv() {
+        const name = state.neName.trim();
+        const p = currentProject();
+        if (!name) return setState({ neErr: "Enter an environment name." });
+        if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) return setState({ neErr: "Use lowercase letters, numbers and hyphens." });
+        if (p.envs.some((e) => e.id === name)) return setState({ neErr: "This environment already exists." });
+        p.envs.push({ id: name, name, apps: [] });
+        setState({ newEnvOpen: false, neName: "", neErr: "" });
+        toast("success", "Created " + name);
+        go("environment", { projectId: p.id, envId: name });
+      }
+      function setForm(patch) {
+        setState((s) => ({ addForm: Object.assign({}, s.addForm, patch) }));
+      }
+      function clearErr(key) {
+        const e = state.addAppErr || {};
+        if (e[key]) {
+          const ne = Object.assign({}, e);
+          delete ne[key];
+          setState({ addAppErr: ne });
+        }
+      }
+      function setArg(i, patch) {
+        setState(function (s) {
+          const arr = (s.addForm.buildArgs || []).map((r, j) => (j === i ? Object.assign({}, r, patch) : r));
+          return { addForm: Object.assign({}, s.addForm, { buildArgs: arr }) };
+        });
+      }
+      function addArg() {
+        setState(function (s) {
+          const arr = (s.addForm.buildArgs || []).concat({ k: "", v: "" });
+          return { addForm: Object.assign({}, s.addForm, { buildArgs: arr }) };
+        });
+      }
+      function rmArg(i) {
+        setState(function (s) {
+          const arr = (s.addForm.buildArgs || []).filter((_, j) => j !== i);
+          return { addForm: Object.assign({}, s.addForm, { buildArgs: arr }) };
+        });
+      }
+      function createApp() {
+        const f = state.addForm,
+          tab = state.addAppTab,
+          err = {};
+        const name = (f.name || "").trim();
+        if (!name) err.name = "Required.";
+        else if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) err.name = "Lowercase, numbers, hyphens only.";
+        const e = currentEnv();
+        if (e && e.apps.some((a) => a.name === name)) err.name = "An app with this name exists in this environment.";
+        if (tab === "git") {
+          if (!(f.repo || "").trim()) err.repo = "Required.";
+          else if (!/^(https?:\/\/|git@|github\.com)/.test(f.repo.trim())) err.repo = "Enter a valid repository URL.";
+        }
+        if (tab === "docker") {
+          if (!(f.image || "").trim()) err.image = "Required.";
+        }
+        if (tab === "template") {
+          if (!(f.tplPass || "").trim()) err.tplPass = "Set a password.";
+        }
+        if (Object.keys(err).length) return setState({ addAppErr: err });
+        const id = (e ? e.id : "") + "-" + name + "-" + Math.random().toString(16).slice(2, 5);
+        let app = {
+          id,
+          name,
+          status: "building",
+          container: currentProject().id + "-" + e.id + "-" + name,
+          memLimit: 512,
+          cpuHist: seedHist(8, 5),
+          memHist: seedHist(90, 20),
+          logs: [],
+          deployments: [],
+          env: [],
+        };
+        if (tab === "git")
+          Object.assign(app, {
+            type: "git",
+            repo: f.repo.trim(),
+            branch: f.branch || "main",
+            dockerfile: f.dockerfile || "Dockerfile",
+            ports: [{ host: 8000 + Math.floor(Math.random() * 900), container: 3000, proto: "TCP" }],
+            env: (f.buildArgs || []).filter((x) => x.k).map((x) => ({ key: x.k, value: x.v, secret: false })),
+          });
+        if (tab === "docker")
+          Object.assign(app, { type: "docker", image: f.image.trim(), ports: [{ host: 8000 + Math.floor(Math.random() * 900), container: 80, proto: "TCP" }] });
+        if (tab === "template")
+          Object.assign(app, {
+            type: "template",
+            image: "postgres:" + (f.tplVersion || "16") + "-alpine",
+            ports: [{ host: parseInt(f.tplPort) || 5432, container: 5432, proto: "TCP" }],
+            env: [
+              { key: "POSTGRES_USER", value: f.tplUser || "app", secret: false },
+              { key: "POSTGRES_PASSWORD", value: f.tplPass, secret: true },
+              { key: "POSTGRES_DB", value: f.tplDb || "app", secret: false },
+            ],
+          });
+        e.apps.push(app);
+        setState({ addAppOpen: false });
+        go("app", { projectId: currentProject().id, envId: e.id, appId: app.id });
+        setTimeout(() => deployApp(app), 350);
+      }
+      function edEnv(i, patch) {
+        setState(function (s) {
+          const d = s.envDraft.map((r, j) => (j === i ? Object.assign({}, r, patch) : r));
+          return { envDraft: d };
+        });
+      }
+      function addEnvRow() {
+        setState(function (s) {
+          return { envDraft: s.envDraft.concat({ key: "", value: "", secret: false, reveal: true }) };
+        });
+      }
+      function rmEnvRow(i) {
+        setState(function (s) {
+          return { envDraft: s.envDraft.filter((_, j) => j !== i) };
+        });
+      }
+      function setAppTab(t) {
+        const a = currentApp();
+        const patch = { appTab: t };
+        if (t === "environment" && a) {
+          patch.envDraft = a.env.map((r) => ({ key: r.key, value: r.value, secret: r.secret, reveal: false }));
+        }
+        setState(patch);
+      }
+      function saveEnv(a) {
+        a.env = state.envDraft.filter((r) => r.key);
+        setState({ envDraft: null });
+        toast("success", "Saved environment variables");
+      }
+      function toggleTheme() {
+        const t = state.theme === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", t);
+        try {
+          localStorage.setItem("helmsman-theme", t);
+        } catch (e) {}
+        setState({ theme: t });
+      }
+
+      // ─── live metrics ───────────────────────────────────────────────────
+      function mkLog(a) {
+        const pool = [
+          ["info", "GET / 200 " + (Math.random() * 30 + 4).toFixed(0) + "ms"],
+          ["info", "GET /api/health 200 2ms"],
+          ["info", "POST /api/orders 201 " + (Math.random() * 80 + 20).toFixed(0) + "ms"],
+          ["debug", "cache hit key=session:" + Math.random().toString(16).slice(2, 8)],
+          ["info", "GET /assets/app." + Math.random().toString(16).slice(2, 7) + ".js 200"],
+          ["warn", "slow query 1." + ((Math.random() * 9) | 0) + "s SELECT * FROM orders"],
+          ["info", "worker tick processed=" + ((Math.random() * 40) | 0) + " jobs"],
+          ["error", "upstream timeout after 5000ms retrying"],
+          ["debug", "gc pause " + (Math.random() * 8 + 1).toFixed(1) + "ms heap=" + ((Math.random() * 120 + 80) | 0) + "mb"],
+        ];
+        let r = Math.random(),
+          pick;
+        if (r > 0.94) pick = pool[7];
+        else if (r > 0.86) pick = pool[5];
+        else pick = pool[Math.floor(Math.random() * 5)];
+        const d = new Date();
+        return { ts: d.toTimeString().slice(0, 8) + "." + String(d.getMilliseconds()).padStart(3, "0"), level: pick[0], text: pick[1] };
+      }
+      // seed logs
+      eachApp((a) => {
+        if (a.status === "running") {
+          for (let i = 0; i < 14; i++) a.logs.push(mkLog(a));
+        }
+      });
+
+      setInterval(() => {
+        const h2 = model.host;
+        push(h2.cpu, Math.max(4, Math.min(96, h2.cpu[h2.cpu.length - 1] + (Math.random() - 0.5) * 14)));
+        push(h2.ram, Math.max(30, Math.min(88, h2.ram[h2.ram.length - 1] + (Math.random() - 0.5) * 5)));
+        push(h2.disk, Math.max(20, Math.min(60, h2.disk[h2.disk.length - 1] + (Math.random() - 0.48) * 0.6)));
+        push(h2.netIn, Math.max(2, Math.min(255, h2.netIn[h2.netIn.length - 1] + (Math.random() - 0.5) * 60)));
+        push(h2.netOut, Math.max(1, Math.min(255, h2.netOut[h2.netOut.length - 1] + (Math.random() - 0.5) * 44)));
+        eachApp((a) => {
+          if (a.status === "running" || a.status === "deploying" || a.status === "restarting") {
+            push(a.cpuHist, Math.max(1, Math.min(95, a.cpuHist[a.cpuHist.length - 1] + (Math.random() - 0.5) * 7)));
+            push(a.memHist, Math.max(8, Math.min(a.memLimit, a.memHist[a.memHist.length - 1] + (Math.random() - 0.5) * 18)));
+          }
+        });
+        setState((s) => ({ tick: s.tick + 1 }));
+      }, 1000);
+      setInterval(() => {
+        const a = currentApp();
+        let changed = false;
+        eachApp((x) => {
+          if (x.status === "running" && Math.random() > 0.4) {
+            push(x.logs, mkLog(x), 400);
+            if (x === a) changed = true;
+          }
+        });
+        if (changed && state.route.screen === "app" && state.appTab === "logs") setState((s) => ({ tick: s.tick + 1 }));
+      }, 750);
+      window.addEventListener("resize", () => setState({ width: window.innerWidth }));
+
+      // ─── render helpers ─────────────────────────────────────────────────
+      function dot(color, anim) {
+        return `<span style="position:relative;width:7px;height:7px;flex:none;display:inline-flex"><span style="position:absolute;inset:0;border-radius:50%;background:${color}"></span>${anim ? `<span style="position:absolute;inset:0;border-radius:50%;background:${color};animation:ringPulse 2.4s ease-out infinite"></span>` : ""}</span>`;
+      }
+      function errRow(msg) {
+        return msg
+          ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f87171;margin-top:7px"><span style="width:4px;height:4px;border-radius:50%;background:#f87171"></span>${msg}</div>`
+          : "`";
+      }
+      function fieldInput(attrs, style, focusStyle) {
+        return `<input ${attrs} style="${style}" onfocus="this.style.cssText='${style};${focusStyle}'" onblur="this.style.cssText='${style}'">`;
+      }
+
+      // ─── render dot indicator ───────────────────────────────────────────
+      function statusDot(color, anim) {
+        return `<span style="position:relative;width:7px;height:7px;flex:none"><span style="position:absolute;inset:0;border-radius:50%;background:${color}"></span>${anim ? `<span style="position:absolute;inset:0;border-radius:50%;background:${color};animation:ringPulse 2.4s ease-out infinite"></span>` : ""}</span>`;
+      }
+      function statusChip(color, label, anim) {
+        return `<span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border-main);flex:none">${statusDot(color, anim)}<span style="font-size:11px;font-weight:500;color:${color}">${label}</span></span>`;
+      }
+
+      // ─── SETUP SCREEN ───────────────────────────────────────────────────
+      function renderSetup() {
+        return `<div style="min-height:100vh;width:100%;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(120% 80% at 50% -10%, var(--surface-raised) 0%, var(--bg) 60%)">
+  <div style="width:100%;max-width:404px;animation:fadeUp .4s ease-out both">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:30px">
+      <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(150deg,#fb923c,#e0651f);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:var(--on-accent)">H</div>
+      <span style="font-size:16px;font-weight:600;letter-spacing:-.01em">Helmsman</span>
+    </div>
+    <h1 style="font-size:23px;font-weight:600;letter-spacing:-.02em;margin-bottom:7px">Set up your server</h1>
+    <p style="font-size:14px;color:var(--text-secondary);line-height:1.5;margin-bottom:26px">Create the admin account. This is the only account — you're the single operator of this host.</p>
+    <form ${hf((e) => {
+      e && e.preventDefault && e.preventDefault();
+      if (!state.setupUser.trim()) return setState({ setupError: "Choose a username." });
+      if (state.setupPass.length < 8) return setState({ setupError: "Password must be at least 8 characters." });
+      setState({ view: "app", setupError: "" });
+      toast("success", "Account created");
+      go("dashboard");
+    })} style="display:flex;flex-direction:column;gap:16px">
+      <label style="display:flex;flex-direction:column;gap:7px">
+        <span style="font-size:12.5px;font-weight:500;color:var(--text-secondary)">Username</span>
+        <input value="${state.setupUser}" ${hi((e) => setState({ setupUser: e.target.value }))} placeholder="admin" autocomplete="username" style="height:42px;padding:0 13px;background:var(--surface-2);border:1px solid var(--border-input);border-radius:8px;font-size:14px;color:var(--text-body);transition:border-color .15s,box-shadow .15s" onfocus="this.style.borderColor='#fb923c';this.style.boxShadow='0 0 0 3px rgba(251,146,60,.16)'" onblur="this.style.borderColor='';this.style.boxShadow=''">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:7px">
+        <span style="font-size:12.5px;font-weight:500;color:var(--text-secondary)">Password</span>
+        <input value="${state.setupPass}" ${hi((e) => setState({ setupPass: e.target.value }))} type="password" placeholder="At least 8 characters" autocomplete="new-password" style="height:42px;padding:0 13px;background:var(--surface-2);border:1px solid var(--border-input);border-radius:8px;font-size:14px;color:var(--text-body);font-family:'Geist Mono',monospace;letter-spacing:.04em;transition:border-color .15s,box-shadow .15s" onfocus="this.style.borderColor='#fb923c';this.style.boxShadow='0 0 0 3px rgba(251,146,60,.16)'" onblur="this.style.borderColor='';this.style.boxShadow=''">
+      </label>
+      ${state.setupError ? `<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#f87171;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.22);border-radius:7px;padding:9px 11px"><span style="width:5px;height:5px;border-radius:50%;background:#f87171;flex:none"></span>${state.setupError}</div>` : ""}
+      <button type="submit" style="height:42px;margin-top:4px;background:#fb923c;color:var(--on-accent);font-weight:600;font-size:14px;border:none;border-radius:8px;cursor:pointer" data-hov="background:#fdac6b">Create account</button>
+    </form>
+    <p style="font-size:12.5px;color:var(--text-tertiary);margin-top:20px;text-align:center">Already set up? <span ${h(() => setState({ view: "login" }))} style="color:var(--text-secondary);cursor:pointer;text-decoration:underline;text-underline-offset:2px">Sign in</span></p>
+  </div>
+</div>`;
+      }
+
+      // ─── LOGIN SCREEN ───────────────────────────────────────────────────
+      function renderLogin() {
+        return `<div style="min-height:100vh;width:100%;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(120% 80% at 50% -10%, var(--surface-raised) 0%, var(--bg) 60%)">
+  <div style="width:100%;max-width:380px;animation:fadeUp .4s ease-out both">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:30px">
+      <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(150deg,#fb923c,#e0651f);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:var(--on-accent)">H</div>
+      <span style="font-size:16px;font-weight:600;letter-spacing:-.01em">Helmsman</span>
+    </div>
+    <h1 style="font-size:23px;font-weight:600;letter-spacing:-.02em;margin-bottom:7px">Sign in</h1>
+    <p style="font-size:14px;color:var(--text-secondary);line-height:1.5;margin-bottom:26px">Sign in to manage <span style="font-family:'Geist Mono',monospace;color:var(--text-body)">node-01</span>.</p>
+    <form ${hf((e) => {
+      e && e.preventDefault && e.preventDefault();
+      if (!state.loginUser.trim() || !state.loginPass) return setState({ loginError: "Enter your username and password." });
+      setState({ view: "app", loginError: "" });
+      go("dashboard");
+    })} style="display:flex;flex-direction:column;gap:16px">
+      <label style="display:flex;flex-direction:column;gap:7px">
+        <span style="font-size:12.5px;font-weight:500;color:var(--text-secondary)">Username</span>
+        <input value="${state.loginUser}" ${hi((e) => setState({ loginUser: e.target.value }))} placeholder="admin" autocomplete="username" style="height:42px;padding:0 13px;background:var(--surface-2);border:1px solid var(--border-input);border-radius:8px;font-size:14px;color:var(--text-body);transition:border-color .15s" onfocus="this.style.borderColor='#fb923c';this.style.boxShadow='0 0 0 3px rgba(251,146,60,.16)'" onblur="this.style.borderColor='';this.style.boxShadow=''">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:7px">
+        <span style="font-size:12.5px;font-weight:500;color:var(--text-secondary)">Password</span>
+        <input value="${state.loginPass}" ${hi((e) => setState({ loginPass: e.target.value }))} type="password" placeholder="••••••••" autocomplete="current-password" style="height:42px;padding:0 13px;background:var(--surface-2);border:1px solid var(--border-input);border-radius:8px;font-size:14px;color:var(--text-body);font-family:'Geist Mono',monospace;letter-spacing:.04em;transition:border-color .15s" onfocus="this.style.borderColor='#fb923c';this.style.boxShadow='0 0 0 3px rgba(251,146,60,.16)'" onblur="this.style.borderColor='';this.style.boxShadow=''">
+      </label>
+      ${state.loginError ? `<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#f87171;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.22);border-radius:7px;padding:9px 11px"><span style="width:5px;height:5px;border-radius:50%;background:#f87171;flex:none"></span>${state.loginError}</div>` : ""}
+      <button type="submit" style="height:42px;margin-top:4px;background:#fb923c;color:var(--on-accent);font-weight:600;font-size:14px;border:none;border-radius:8px;cursor:pointer" data-hov="background:#fdac6b">Sign in</button>
+    </form>
+    <p style="font-size:12.5px;color:var(--text-tertiary);margin-top:20px;text-align:center">First run? <span ${h(() => setState({ view: "setup" }))} style="color:var(--text-secondary);cursor:pointer;text-decoration:underline;text-underline-offset:2px">Set up the server</span></p>
+  </div>
+</div>`;
+      }
+
+      // ─── SIDEBAR ────────────────────────────────────────────────────────
+      function renderSidebar(V) {
+        const { expanded, screen } = V;
+        const navDef = [
+          { key: "dashboard", label: "Dashboard", icon: "▦" },
+          { key: "projects", label: "Projects", icon: "⬡" },
+        ];
+        const navActive = screen === "dashboard" ? "dashboard" : "projects";
+        const w = expanded ? "232px" : "62px";
+        const colIcon = expanded ? "«" : "»";
+        return `<aside style="width:${w};flex:none;display:flex;flex-direction:column;background:var(--surface-2);border-right:1px solid var(--border-main);transition:width .18s ease;z-index:20">
+  <div style="height:56px;flex:none;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--border-main)">
+    <div style="width:28px;height:28px;flex:none;border-radius:7px;background:linear-gradient(150deg,#fb923c,#e0651f);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--on-accent)">H</div>
+    ${expanded ? `<span style="font-size:15px;font-weight:600;letter-spacing:-.01em;white-space:nowrap">Helmsman</span>` : ""}
+  </div>
+  <nav style="flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:3px">
+    ${navDef
+      .map((n) => {
+        const active = n.key === navActive;
+        const color = active ? "var(--text-body)" : "var(--text-secondary)";
+        const bg = active ? "var(--surface-hover)" : "transparent";
+        const weight = active ? "600" : "500";
+        return `<div ${h(() => go(n.key))} title="${n.label}" style="display:flex;align-items:center;gap:11px;height:38px;padding:0 11px;border-radius:8px;cursor:pointer;color:${color};background:${bg};font-size:13.5px;font-weight:${weight};transition:background .14s,color .14s;position:relative" data-hov="background:var(--surface-hover)">
+        <span style="font-family:'Geist Mono';font-size:14px;width:18px;text-align:center;flex:none">${n.icon}</span>
+        ${expanded ? `<span style="white-space:nowrap">${n.label}</span>` : ""}
+        ${active ? `<span style="position:absolute;left:-10px;top:9px;bottom:9px;width:2.5px;border-radius:2px;background:#fb923c"></span>` : ""}
+      </div>`;
+      })
+      .join("")}
+  </nav>
+  <div style="flex:none;padding:10px;border-top:1px solid var(--border-main)">
+    <div ${h(() => setState((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })))} style="display:flex;align-items:center;gap:11px;height:34px;padding:0 11px;border-radius:8px;cursor:pointer;color:var(--text-tertiary);font-size:12.5px;transition:background .14s,color .14s" data-hov="background:var(--surface-hover);color:var(--text-secondary)">
+      <span style="font-family:'Geist Mono';width:18px;text-align:center;flex:none">${colIcon}</span>
+      ${expanded ? `<span style="white-space:nowrap">Collapse</span>` : ""}
+    </div>
+    <div ${h(() => setState((s) => ({ userMenuOpen: !s.userMenuOpen })))} style="display:flex;align-items:center;gap:10px;height:44px;padding:0 9px;border-radius:8px;cursor:pointer;margin-top:2px;transition:background .14s;position:relative" data-hov="background:var(--surface-hover)">
+      <div style="width:26px;height:26px;flex:none;border-radius:50%;background:var(--surface-raised);border:1px solid var(--border-input);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--text-secondary)">AD</div>
+      ${expanded ? `<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">admin</div><div style="font-size:11px;color:var(--text-tertiary);white-space:nowrap">operator</div></div>` : ""}
+      ${
+        state.userMenuOpen
+          ? `<div style="position:absolute;bottom:48px;left:6px;right:6px;background:var(--surface-raised);border:1px solid var(--border-input);border-radius:9px;padding:5px;box-shadow:0 12px 30px -8px rgba(0,0,0,.6);z-index:40;animation:fadeUp .14s ease-out both">
+        <div ${h((e) => {
+          e && e.stopPropagation && e.stopPropagation();
+          setState({ view: "login", userMenuOpen: false, drawerOpen: false });
+        })} style="display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text-body)" data-hov="background:var(--surface-hover2)"><span style="font-family:'Geist Mono';color:var(--text-tertiary)">⎋</span>Sign out</div>
+      </div>`
+          : ""
+      }
+    </div>
+  </div>
+</aside>`;
+      }
+
+      // ─── MOBILE DRAWER ──────────────────────────────────────────────────
+      function renderMobileDrawer() {
+        if (!state.drawerOpen) return "";
+        const navDef = [
+          { key: "dashboard", label: "Dashboard", icon: "▦" },
+          { key: "projects", label: "Projects", icon: "⬡" },
+        ];
+        const navActive = state.route.screen === "dashboard" ? "dashboard" : "projects";
+        return `<div ${h(() => setState({ drawerOpen: false }))} style="position:fixed;inset:0;background:var(--scrim);z-index:60;animation:fadeIn .16s ease-out">
+  <aside ${h((e) => e && e.stopPropagation && e.stopPropagation())} style="width:262px;height:100%;display:flex;flex-direction:column;background:var(--surface-2);border-right:1px solid var(--border-main);animation:fadeUp .18s ease-out both">
+    <div style="height:56px;flex:none;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--border-main)">
+      <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(150deg,#fb923c,#e0651f);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--on-accent)">H</div>
+      <span style="font-size:15px;font-weight:600">Helmsman</span>
+    </div>
+    <nav style="flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:3px">
+      ${navDef
+        .map((n) => {
+          const active = n.key === navActive;
+          const color = active ? "var(--text-body)" : "var(--text-secondary)";
+          const bg = active ? "var(--surface-hover)" : "transparent";
+          const weight = active ? "600" : "500";
+          return `<div ${h(() => {
+            go(n.key);
+            setState({ drawerOpen: false });
+          })} style="display:flex;align-items:center;gap:11px;height:44px;padding:0 12px;border-radius:8px;cursor:pointer;color:${color};background:${bg};font-size:14px;font-weight:${weight}">
+          <span style="font-family:'Geist Mono';width:18px;text-align:center">${n.icon}</span>${n.label}
+        </div>`;
+        })
+        .join("")}
+    </nav>
+    <div style="flex:none;padding:12px;border-top:1px solid var(--border-main);display:flex;align-items:center;gap:10px">
+      <div style="width:30px;height:30px;border-radius:50%;background:var(--surface-raised);border:1px solid var(--border-input);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--text-secondary)">AD</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:500">admin</div><div style="font-size:11px;color:var(--text-tertiary)">operator</div></div>
+      <div ${h(() => setState({ view: "login", userMenuOpen: false, drawerOpen: false }))} style="font-family:'Geist Mono';color:var(--text-tertiary);padding:8px;cursor:pointer" title="Sign out">⎋</div>
+    </div>
+  </aside>
+</div>`;
+      }
+
+      // ─── TOPBAR ─────────────────────────────────────────────────────────
+      function renderTopbar(V) {
+        const { screen, isMobile } = V;
+        const crumbs = [];
+        const sep = () => {
+          if (crumbs.length) crumbs.push({ sep: true });
+        };
+        if (screen === "dashboard") {
+          crumbs.push({ label: "Dashboard", color: "var(--text-body)", cursor: "default", weight: "600", font: "inherit" });
+        } else {
+          crumbs.push({ label: "Projects", color: "var(--text-secondary)", cursor: "pointer", weight: "500", font: "inherit", go: () => go("projects") });
+          const p = currentProject();
+          if (p) {
+            sep();
+            crumbs.push({
+              label: p.name,
+              color: screen === "project" ? "var(--text-body)" : "var(--text-secondary)",
+              cursor: screen === "project" ? "default" : "pointer",
+              weight: screen === "project" ? "600" : "500",
+              font: "'Geist Mono'",
+              go: screen === "project" ? null : () => go("project", { projectId: p.id }),
+            });
+          }
+          const e = currentEnv();
+          if (e) {
+            sep();
+            crumbs.push({
+              label: e.name,
+              color: screen === "environment" ? "var(--text-body)" : "var(--text-secondary)",
+              cursor: screen === "environment" ? "default" : "pointer",
+              weight: screen === "environment" ? "600" : "500",
+              font: "'Geist Mono'",
+              go: screen === "environment" ? null : () => go("environment", { projectId: p.id, envId: e.id }),
+            });
+          }
+          const a = currentApp();
+          if (a && screen === "app") {
+            sep();
+            crumbs.push({ label: a.name, color: "var(--text-body)", cursor: "default", weight: "600", font: "'Geist Mono'" });
+          }
+        }
+        const themeIcon = state.theme === "light" ? "☾" : "☀";
+        const themeTitle = state.theme === "light" ? "Switch to dark mode" : "Switch to light mode";
+        return `<header style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 16px 0 14px;border-bottom:1px solid var(--border-main);background:var(--topbar);backdrop-filter:blur(10px);z-index:15">
+  ${isMobile ? `<div ${h(() => setState({ drawerOpen: true }))} style="width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;color:var(--text-secondary);font-family:'Geist Mono';font-size:16px" data-hov="background:var(--surface-hover)">≡</div>` : ""}
+  <nav style="flex:1;min-width:0;display:flex;align-items:center;gap:7px;font-size:13.5px;overflow:hidden">
+    ${crumbs
+      .map((c) => {
+        if (c.sep) return `<span style="color:var(--text-ghost);font-family:'Geist Mono';font-size:12px;flex:none">/</span>`;
+        return `<span ${c.go ? h(c.go) : ""} style="color:${c.color};cursor:${c.cursor};font-weight:${c.weight};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:${c.font}" ${c.go ? `data-hov="color:var(--text-body)"` : ""}}>${c.label}</span>`;
+      })
+      .join("")}
+  </nav>
+  <div style="display:flex;align-items:center;gap:9px;flex:none">
+    <div ${h(() => toggleTheme())} title="${themeTitle}" style="width:32px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--surface-card);border:1px solid var(--border-main);border-radius:7px;cursor:pointer;color:var(--text-secondary);font-family:'Geist Mono';font-size:14px;transition:color .15s,border-color .15s" data-hov="color:var(--text-primary);border-color:var(--border-strong)">${themeIcon}</div>
+    ${
+      !isMobile || screen === "dashboard"
+        ? `<div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 11px;background:var(--surface-card);border:1px solid var(--border-main);border-radius:7px">
+      <span style="position:relative;width:7px;height:7px;flex:none"><span style="position:absolute;inset:0;border-radius:50%;background:#34d399"></span><span style="position:absolute;inset:0;border-radius:50%;background:#34d399;animation:ringPulse 2.4s ease-out infinite"></span></span>
+      <span style="font-family:'Geist Mono';font-size:12px;color:var(--text-secondary)">node-01</span>
+      <span style="font-size:11.5px;color:#34d399;font-weight:500">Healthy</span>
+    </div>`
+        : ""
+    }
+  </div>
+</header>`;
+      }
+
+      // ─── DASHBOARD ──────────────────────────────────────────────────────
+      function renderDashboard(V) {
+        const h2 = model.host;
+        const cur = (arr) => arr[arr.length - 1];
+        const ramUsed = (cur(h2.ram) / 100) * h2.ramTotal;
+        const diskUsed = (cur(h2.disk) / 100) * h2.diskTotal;
+        const metricCards = [
+          {
+            id: "cpu",
+            label: "CPU",
+            unit: "%",
+            value: cur(h2.cpu).toFixed(0),
+            sub: "/ " + h2.cores + " cores",
+            pct: cur(h2.cpu).toFixed(0),
+            color: "#fb923c",
+            arr: h2.cpu,
+            max: 100,
+          },
+          {
+            id: "ram",
+            label: "Memory",
+            unit: "GB",
+            value: ramUsed.toFixed(1),
+            sub: "/ " + h2.ramTotal,
+            pct: cur(h2.ram).toFixed(0),
+            color: "#34d399",
+            arr: h2.ram,
+            max: 100,
+          },
+          {
+            id: "disk",
+            label: "Disk",
+            unit: "GB",
+            value: diskUsed.toFixed(0),
+            sub: "/ " + h2.diskTotal,
+            pct: cur(h2.disk).toFixed(0),
+            color: "#a78bfa",
+            arr: h2.disk,
+            max: 100,
+          },
+          {
+            id: "net",
+            label: "Network",
+            unit: "MB/s",
+            value: fmtNet(cur(h2.netIn)),
+            sub: "↓ in",
+            pct: Math.min(100, cur(h2.netIn) / 2.6).toFixed(0),
+            color: "#60a5fa",
+            arr: h2.netIn,
+            max: 260,
+          },
+        ].map((c) => {
+          const p = makePath(c.arr, 220, 38, c.max);
+          return Object.assign(c, p);
+        });
+
+        let totalProjects = model.projects.length,
+          runningProjects = 0,
+          totalEnvs = 0,
+          totalApps = 0,
+          runningApps = 0,
+          attention = 0;
+        let allDeploys = [];
+        model.projects.forEach((p) => {
+          if (projectRollup(p) === "running") runningProjects++;
+          totalEnvs += p.envs.length;
+          p.envs.forEach((e) => {
+            e.apps.forEach((a) => {
+              totalApps++;
+              if (a.status === "running") runningApps++;
+              if (a.status === "failed" || a.status === "exited") attention++;
+              (a.deployments || []).forEach((d) => allDeploys.push({ d, app: a.name, proj: p.name, env: e.name, projectId: p.id, envId: e.id, appId: a.id }));
+            });
+          });
+        });
+        const monIdx = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+        const keyOf = (s2) => {
+          const mm = (s2 || "").match(/(\w+)\s+(\d+)\s+(\d+):(\d+)/);
+          if (!mm) return 0;
+          return (monIdx[mm[1]] || 0) * 1e6 + +mm[2] * 1e4 + +mm[3] * 100 + +mm[4];
+        };
+        allDeploys.sort((a, b) => keyOf(b.d.started) - keyOf(a.d.started));
+        const recent = allDeploys.slice(0, 5);
+
+        const statCards = [
+          {
+            label: "Projects",
+            value: String(totalProjects),
+            sub: runningProjects + " running",
+            icon: "⬡",
+            iconColor: "var(--text-tertiary)",
+            subColor: "var(--text-tertiary)",
+          },
+          {
+            label: "Applications",
+            value: String(totalApps),
+            sub: runningApps + " running",
+            icon: "❒",
+            iconColor: "var(--text-tertiary)",
+            subColor: runningApps > 0 ? "#34d399" : "var(--text-tertiary)",
+          },
+          {
+            label: "Environments",
+            value: String(totalEnvs),
+            sub: "across host",
+            icon: "◳",
+            iconColor: "var(--text-tertiary)",
+            subColor: "var(--text-tertiary)",
+          },
+          {
+            label: "Needs attention",
+            value: String(attention),
+            sub: attention === 0 ? "all healthy" : "failed / exited",
+            icon: "!",
+            iconColor: attention > 0 ? "#f87171" : "#34d399",
+            subColor: attention > 0 ? "#f87171" : "var(--text-tertiary)",
+          },
+        ];
+        const sysinfo = [
+          { k: "Hostname", v: model.sys.hostname },
+          { k: "OS", v: model.sys.os },
+          { k: "Kernel", v: model.sys.kernel },
+          { k: "Architecture", v: model.sys.arch },
+          { k: "CPU", v: model.sys.cpu },
+          { k: "Cores", v: model.sys.cores + " vCPU" },
+          { k: "Total memory", v: model.sys.ram },
+          { k: "Uptime", v: model.sys.uptime },
+          { k: "Docker", v: "v" + model.sys.docker },
+        ];
+        const isMobile = V.isMobile,
+          isTablet = V.isTablet;
+        const metricCols = isMobile ? "1fr 1fr" : "repeat(4,1fr)";
+        const chartCols = isMobile || isTablet ? "1fr" : "1fr calc((100% - 42px) / 4)";
+        return `<div style="width:100%;padding:${V.pagePad}">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap">
+    <div>
+      <h1 style="font-size:21px;font-weight:600;letter-spacing:-.02em">Host monitor</h1>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin-top:4px">Live resource usage for <span style="font-family:'Geist Mono';color:var(--text-body)">node-01</span> · refreshed every second</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-tertiary);font-family:'Geist Mono'">
+      <span style="position:relative;width:6px;height:6px"><span style="position:absolute;inset:0;border-radius:50%;background:#34d399"></span><span style="position:absolute;inset:0;border-radius:50%;background:#34d399;animation:ringPulse 2.4s ease-out infinite"></span></span>live
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:${metricCols};gap:14px;margin-bottom:16px">
+    ${metricCards
+      .map(
+        (
+          m,
+        ) => `<div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:10px;padding:15px 16px 12px;transition:border-color .15s" data-hov="border-color:var(--border-input)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+        <span style="font-size:12px;color:var(--text-secondary);font-weight:500;letter-spacing:.01em">${m.label}</span>
+        <span style="font-family:'Geist Mono';font-size:10.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em">${m.unit}</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <span style="font-family:'Geist Mono';font-size:25px;font-weight:500;letter-spacing:-.02em;color:var(--text-body);font-variant-numeric:tabular-nums">${m.value}</span>
+        <span style="font-family:'Geist Mono';font-size:13px;color:var(--text-tertiary)">${m.sub}</span>
+      </div>
+      <svg viewBox="0 0 220 38" preserveAspectRatio="none" style="width:100%;height:34px;margin-top:8px;display:block">
+        <defs><linearGradient id="g-${m.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${m.color}" stop-opacity="0.22"/><stop offset="1" stop-color="${m.color}" stop-opacity="0"/></linearGradient></defs>
+        <path d="${m.area}" fill="url(#g-${m.id})"/><path d="${m.line}" fill="none" stroke="${m.color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="${m.lastX}" cy="${m.lastY}" r="2.4" fill="${m.color}"/>
+      </svg>
+      <div style="margin-top:9px;height:4px;border-radius:3px;background:var(--bg);overflow:hidden"><div style="height:100%;width:${m.pct}%;background:${m.color};border-radius:3px;transition:width .9s linear"></div></div>
+    </div>`,
+      )
+      .join("")}
+  </div>
+  <div style="display:grid;grid-template-columns:${chartCols};gap:16px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:14px">
+        ${statCards
+          .map(
+            (
+              st,
+            ) => `<div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;padding:16px 17px;display:flex;flex-direction:column;gap:12px;transition:border-color .15s" data-hov="border-color:var(--border-input)">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:12px;color:var(--text-secondary);font-weight:500;letter-spacing:.01em">${st.label}</span>
+            <span style="font-family:'Geist Mono';font-size:13px;color:${st.iconColor}">${st.icon}</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:7px">
+            <span style="font-family:'Geist Mono';font-size:28px;font-weight:500;letter-spacing:-.02em;color:var(--text-primary);font-variant-numeric:tabular-nums;line-height:1">${st.value}</span>
+            <span style="font-size:12.5px;color:${st.subColor}">${st.sub}</span>
+          </div>
+        </div>`,
+          )
+          .join("")}
+      </div>
+      <div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;border-bottom:1px solid var(--border-main)">
+          <span style="font-size:13.5px;font-weight:600">Recent deployments</span>
+          <span style="font-size:11.5px;color:var(--text-tertiary);font-family:'Geist Mono'">last ${recent.length}</span>
+        </div>
+        ${recent.length === 0 ? `<div style="padding:18px 16px;font-size:12.5px;color:var(--text-tertiary)">No deployments yet.</div>` : ""}
+        ${recent
+          .map((x) => {
+            const ds = sdStatus(x.d.status);
+            return `<div ${h(() => go("app", { projectId: x.projectId, envId: x.envId, appId: x.appId, appTab: "deployments" }))} style="display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border-inner);cursor:pointer;transition:background .14s" data-hov="background:var(--surface-inset)">
+          ${statusDot(ds.color, ds.anim)}
+          <div style="display:flex;flex-direction:column;gap:3px;min-width:0;flex:1">
+            <div style="display:flex;align-items:center;gap:7px;min-width:0">
+              <span style="font-family:'Geist Mono';font-size:13px;font-weight:500;color:var(--text-body);white-space:nowrap">${x.app}</span>
+              <span style="font-size:11.5px;color:var(--text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${x.proj} / ${x.env}</span>
+            </div>
+            <span style="font-family:'Geist Mono';font-size:11px;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${x.d.tag} · ${x.d.trigger}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:none">
+            <span style="font-size:11.5px;font-weight:500;color:${ds.color}">${ds.label}</span>
+            <span style="font-family:'Geist Mono';font-size:11px;color:var(--text-faint)">${x.d.started}</span>
+          </div>
+        </div>`;
+          })
+          .join("")}
+      </div>
+    </div>
+    <div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;overflow:hidden;min-width:0">
+      <div style="padding:14px 16px 12px;border-bottom:1px solid var(--border-main)"><span style="font-size:13.5px;font-weight:600">System</span><span style="font-size:11.5px;color:var(--text-tertiary);margin-left:8px">static info</span></div>
+      ${sysinfo
+        .map(
+          (
+            row,
+          ) => `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border-inner)">
+        <span style="font-size:12.5px;color:var(--text-secondary);flex:none">${row.k}</span>
+        <span style="font-family:'Geist Mono';font-size:12.5px;color:var(--text-body);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.v}</span>
+      </div>`,
+        )
+        .join("")}
+    </div>
+  </div>
+</div>`;
+      }
+
+      // ─── PROJECTS ───────────────────────────────────────────────────────
+      function renderProjects(V) {
+        const cardCols = V.isMobile ? "1fr" : V.isTablet ? "repeat(2,1fr)" : "repeat(3,1fr)";
+        return `<div style="width:100%;padding:${V.pagePad}">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap">
+    <div>
+      <h1 style="font-size:21px;font-weight:600;letter-spacing:-.02em">Projects</h1>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin-top:4px">Group your apps by project, then split each into environments.</p>
+    </div>
+    <button ${h(() => setState({ newProjectOpen: true, npName: "", npErr: "" }))} style="display:flex;align-items:center;gap:7px;height:36px;padding:0 14px;background:#fb923c;color:var(--on-accent);font-weight:600;font-size:13.5px;border:none;border-radius:8px;cursor:pointer;transition:background .15s" data-hov="background:#fdac6b"><span style="font-size:15px;line-height:1">+</span>New project</button>
+  </div>
+  ${
+    model.projects.length === 0
+      ? `<div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:64px 24px;background:var(--surface-2);border:1px dashed var(--border-input);border-radius:12px">
+    <div style="width:46px;height:46px;border-radius:12px;background:var(--surface-card);border:1px solid var(--border-input);display:flex;align-items:center;justify-content:center;font-family:'Geist Mono';font-size:20px;color:var(--text-tertiary)">⬡</div>
+    <div><div style="font-size:15px;font-weight:600;margin-bottom:4px">No projects yet</div><div style="font-size:13.5px;color:var(--text-secondary);max-width:330px">Create your first project to start adding environments and apps.</div></div>
+    <button ${h(() => setState({ newProjectOpen: true, npName: "", npErr: "" }))} style="height:36px;padding:0 16px;background:#fb923c;color:var(--on-accent);font-weight:600;font-size:13.5px;border:none;border-radius:8px;cursor:pointer">Create a project</button>
+  </div>`
+      : ""
+  }
+  <div style="display:grid;grid-template-columns:${cardCols};gap:14px">
+    ${model.projects
+      .map((p) => {
+        const appCount = p.envs.reduce((n, e) => n + e.apps.length, 0);
+        const st = sdStatus(projectRollup(p));
+        return `<div ${h(() => go("project", { projectId: p.id }))} style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;padding:16px 17px;cursor:pointer;transition:border-color .15s,transform .12s" data-hov="border-color:var(--border-strong);transform:translateY(-1px)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px">
+          <span style="font-family:'Geist Mono';font-size:14.5px;font-weight:500;color:var(--text-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</span>
+          ${statusChip(st.color, st.label, st.anim)}
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;font-size:12.5px;color:var(--text-secondary)">
+          <span style="display:flex;align-items:center;gap:6px"><span style="font-family:'Geist Mono';color:var(--text-tertiary)">◳</span>${p.envs.length} environment${p.envs.length !== 1 ? "s" : ""}</span>
+          <span style="display:flex;align-items:center;gap:6px"><span style="font-family:'Geist Mono';color:var(--text-tertiary)">❒</span>${appCount} app${appCount !== 1 ? "s" : ""}</span>
+        </div>
+      </div>`;
+      })
+      .join("")}
+    ${
+      model.projects.length > 0
+        ? `<div ${h(() => setState({ newProjectOpen: true, npName: "", npErr: "" }))} style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:106px;background:var(--surface-2);border:1px dashed var(--border-strong);border-radius:11px;cursor:pointer;color:var(--text-tertiary);transition:border-color .15s,color .15s,background .15s" data-hov="border-color:#fb923c;color:#fb923c;background:var(--surface-card)">
+      <span style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;border:1px solid var(--border-strong);background:var(--surface-card);font-size:20px;line-height:1;font-weight:300">+</span>
+      <span style="font-size:12.5px;font-weight:500">New project</span>
+    </div>`
+        : ""
+    }
+  </div>
+</div>`;
+      }
+
+      // ─── PROJECT DETAIL ─────────────────────────────────────────────────
+      function renderProjectDetail(V) {
+        const p = currentProject();
+        if (!p) return "";
+        const cardCols = V.isMobile ? "1fr" : V.isTablet ? "repeat(2,1fr)" : "repeat(3,1fr)";
+        return `<div style="width:100%;padding:${V.pagePad}">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap">
+    <div>
+      <h1 style="font-family:'Geist Mono';font-size:20px;font-weight:500;letter-spacing:-.01em">${p.name}</h1>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin-top:5px">${p.envs.length} environments · ${p.envs.reduce((n, e) => n + e.apps.length, 0)} apps</p>
+    </div>
+    <button ${h(() => setState({ newEnvOpen: true, neName: "", neErr: "" }))} style="display:flex;align-items:center;gap:7px;height:36px;padding:0 14px;background:#fb923c;color:var(--on-accent);font-weight:600;font-size:13.5px;border:none;border-radius:8px;cursor:pointer;transition:background .15s" data-hov="background:#fdac6b"><span style="font-size:15px;line-height:1">+</span>New environment</button>
+  </div>
+  ${
+    p.envs.length === 0
+      ? `<div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:64px 24px;background:var(--surface-2);border:1px dashed var(--border-input);border-radius:12px">
+    <div style="width:46px;height:46px;border-radius:12px;background:var(--surface-card);border:1px solid var(--border-input);display:flex;align-items:center;justify-content:center;font-family:'Geist Mono';font-size:20px;color:var(--text-tertiary)">◳</div>
+    <div><div style="font-size:15px;font-weight:600;margin-bottom:4px">No environments yet</div><div style="font-size:13.5px;color:var(--text-secondary);max-width:340px">Add an environment like <span style="font-family:'Geist Mono';color:var(--text-secondary)">production</span> or <span style="font-family:'Geist Mono';color:var(--text-secondary)">staging</span> to hold your apps.</div></div>
+    <button ${h(() => setState({ newEnvOpen: true, neName: "", neErr: "" }))} style="height:36px;padding:0 16px;background:#fb923c;color:var(--on-accent);font-weight:600;font-size:13.5px;border:none;border-radius:8px;cursor:pointer">Add environment</button>
+  </div>`
+      : ""
+  }
+  <div style="display:grid;grid-template-columns:${cardCols};gap:14px">
+    ${p.envs
+      .map((e) => {
+        const st = sdStatus(rollup(e.apps));
+        return `<div ${h(() => go("environment", { projectId: p.id, envId: e.id }))} style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;padding:16px 17px;cursor:pointer;transition:border-color .15s,transform .12s" data-hov="border-color:var(--border-strong);transform:translateY(-1px)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px">
+        <span style="font-family:'Geist Mono';font-size:14.5px;font-weight:500;color:var(--text-body)">${e.name}</span>
+        ${statusChip(st.color, st.label, st.anim)}
+      </div>
+      <div style="font-size:12.5px;color:var(--text-secondary);display:flex;align-items:center;gap:6px"><span style="font-family:'Geist Mono';color:var(--text-tertiary)">❒</span>${e.apps.length} app${e.apps.length !== 1 ? "s" : ""}</div>
+    </div>`;
+      })
+      .join("")}
+    ${
+      p.envs.length > 0
+        ? `<div ${h(() => setState({ newEnvOpen: true, neName: "", neErr: "" }))} style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:96px;background:var(--surface-2);border:1px dashed var(--border-strong);border-radius:11px;cursor:pointer;color:var(--text-tertiary);transition:border-color .15s,color .15s,background .15s" data-hov="border-color:#fb923c;color:#fb923c;background:var(--surface-card)">
+      <span style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;border:1px solid var(--border-strong);background:var(--surface-card);font-size:20px;line-height:1;font-weight:300">+</span>
+      <span style="font-size:12.5px;font-weight:500">New environment</span>
+    </div>`
+        : ""
+    }
+  </div>
+</div>`;
+      }
+
+      // ─── ENV DETAIL ─────────────────────────────────────────────────────
+      function renderEnvDetail(V) {
+        const p = currentProject(),
+          e = currentEnv();
+        if (!p || !e) return "";
+        const appCols = V.isMobile ? "1fr" : "repeat(2,1fr)";
+        return `<div style="width:100%;padding:${V.pagePad}">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap">
+    <div>
+      <h1 style="font-size:20px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:9px">
+        <span style="font-family:'Geist Mono';font-weight:500;color:var(--text-secondary);font-size:18px">${p.name}</span>
+        <span style="color:var(--text-ghost);font-family:'Geist Mono';font-size:15px">/</span>
+        <span style="font-family:'Geist Mono';font-weight:500">${e.name}</span>
+      </h1>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin-top:5px">Applications in this environment. Each is a Docker container.</p>
+    </div>
+    <button ${h(() => {
+      setState({
+        addAppOpen: true,
+        addAppTab: "git",
+        addAppErr: {},
+        addForm: { dockerfile: "Dockerfile", branch: "main", tplVersion: "16", tplUser: "app", tplDb: "app", tplPort: "5432", buildArgs: [{ k: "", v: "" }] },
+      });
+    })} style="display:flex;align-items:center;gap:7px;height:36px;padding:0 14px;background:#fb923c;color:var(--on-accent);font-weight:600;font-size:13.5px;border:none;border-radius:8px;cursor:pointer;transition:background .15s" data-hov="background:#fdac6b"><span style="font-size:15px;line-height:1">+</span>Add application</button>
+  </div>
+  ${
+    e.apps.length === 0
+      ? `<div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:64px 24px;background:var(--surface-2);border:1px dashed var(--border-input);border-radius:12px">
+    <div style="width:46px;height:46px;border-radius:12px;background:var(--surface-card);border:1px solid var(--border-input);display:flex;align-items:center;justify-content:center;font-family:'Geist Mono';font-size:20px;color:var(--text-tertiary)">❒</div>
+    <div><div style="font-size:15px;font-weight:600;margin-bottom:4px">No applications yet</div><div style="font-size:13.5px;color:var(--text-secondary);max-width:360px">Add an app from a Git repo, a Docker image, or a template.</div></div>
+    <button ${h(() => {
+      setState({
+        addAppOpen: true,
+        addAppTab: "git",
+        addAppErr: {},
+        addForm: { dockerfile: "Dockerfile", branch: "main", tplVersion: "16", tplUser: "app", tplDb: "app", tplPort: "5432", buildArgs: [{ k: "", v: "" }] },
+      });
+    })} style="height:36px;padding:0 16px;background:#fb923c;color:var(--on-accent);font-weight:600;font-size:13.5px;border:none;border-radius:8px;cursor:pointer">Add application</button>
+  </div>`
+      : ""
+  }
+  <div style="display:grid;grid-template-columns:${appCols};gap:14px">
+    ${e.apps
+      .map((a) => {
+        const st = sdStatus(a.status),
+          ty = sdType(a.type);
+        const menuOpen = state.menuFor === a.id;
+        return `<div ${h(() => go("app", { projectId: p.id, envId: e.id, appId: a.id }))} style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;padding:15px 16px;cursor:pointer;transition:border-color .15s;position:relative" data-hov="border-color:var(--border-strong)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px">
+          <div style="display:flex;align-items:center;gap:9px;min-width:0">
+            <span style="font-family:'Geist Mono';font-size:14.5px;font-weight:500;color:var(--text-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 7px;border-radius:5px;background:var(--surface-2);border:1px solid var(--border-main);flex:none"><span style="font-family:'Geist Mono';font-size:10px;color:${ty.color}">${ty.icon}</span><span style="font-size:10.5px;font-weight:500;color:var(--text-secondary)">${ty.label}</span></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex:none">
+            ${statusChip(st.color, st.label, st.anim)}
+            <div ${h((ev) => {
+              ev && ev.stopPropagation && ev.stopPropagation();
+              setState((s2) => ({ menuFor: s2.menuFor === a.id ? null : a.id }));
+            })} style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;color:var(--text-tertiary);font-size:16px;line-height:0" data-hov="background:var(--surface-raised);color:var(--text-body)">⋯</div>
+          </div>
+        </div>
+        <div style="font-family:'Geist Mono';font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:9px">${imgOf(a)}</div>
+        <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text-tertiary)"><span style="font-family:'Geist Mono';color:var(--text-mono-faint)">⇄</span><span style="font-family:'Geist Mono'">${portsLabel(a)}</span></div>
+        ${
+          menuOpen
+            ? `<div ${h((ev) => {
+                ev && ev.stopPropagation && ev.stopPropagation();
+              })} style="position:absolute;top:42px;right:14px;width:184px;background:var(--surface-raised);border:1px solid var(--border-input);border-radius:9px;padding:5px;box-shadow:0 16px 38px -12px rgba(0,0,0,.7);z-index:30;animation:fadeUp .13s ease-out both">
+          ${
+            a.status === "stopped" || a.status === "failed" || a.status === "exited"
+              ? `<div ${h((ev) => {
+                  ev && ev.stopPropagation();
+                  setState({ menuFor: null });
+                  startApp(a);
+                })} style="display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text-body)" data-hov="background:var(--surface-hover2)"><span style="font-family:'Geist Mono';color:#34d399">▷</span>Start</div>`
+              : ""
+          }
+          ${
+            a.status === "running"
+              ? `<div ${h((ev) => {
+                  ev && ev.stopPropagation();
+                  setState({ menuFor: null });
+                  stopApp(a);
+                })} style="display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text-body)" data-hov="background:var(--surface-hover2)"><span style="font-family:'Geist Mono';color:var(--text-tertiary)">▢</span>Stop</div>`
+              : ""
+          }
+          <div ${h((ev) => {
+            ev && ev.stopPropagation();
+            setState({ menuFor: null });
+            restartApp(a);
+          })} style="display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text-body)" data-hov="background:var(--surface-hover2)"><span style="font-family:'Geist Mono';color:#60a5fa">↻</span>Restart</div>
+          <div ${h((ev) => {
+            ev && ev.stopPropagation();
+            setState({ menuFor: null });
+            deployApp(a);
+          })} style="display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text-body)" data-hov="background:var(--surface-hover2)"><span style="font-family:'Geist Mono';color:#fbbf24">⟳</span>Redeploy</div>
+          <div style="height:1px;background:var(--border-input);margin:4px 6px"></div>
+          <div ${h((ev) => {
+            ev && ev.stopPropagation();
+            setState({ menuFor: null });
+            askDelete(a);
+          })} style="display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:6px;font-size:13px;cursor:pointer;color:#f87171" data-hov="background:rgba(248,113,113,.1)"><span style="font-family:'Geist Mono'">⌫</span>Delete</div>
+        </div>`
+            : ""
+        }
+      </div>`;
+      })
+      .join("")}
+    ${
+      e.apps.length > 0
+        ? `<div ${h(() => {
+            setState({
+              addAppOpen: true,
+              addAppTab: "git",
+              addAppErr: {},
+              addForm: {
+                dockerfile: "Dockerfile",
+                branch: "main",
+                tplVersion: "16",
+                tplUser: "app",
+                tplDb: "app",
+                tplPort: "5432",
+                buildArgs: [{ k: "", v: "" }],
+              },
+            });
+          })} style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:104px;background:var(--surface-2);border:1px dashed var(--border-strong);border-radius:11px;cursor:pointer;color:var(--text-tertiary);transition:border-color .15s,color .15s,background .15s" data-hov="border-color:#fb923c;color:#fb923c;background:var(--surface-card)">
+      <span style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;border:1px solid var(--border-strong);background:var(--surface-card);font-size:20px;line-height:1;font-weight:300">+</span>
+      <span style="font-size:12.5px;font-weight:500">Add application</span>
+    </div>`
+        : ""
+    }
+  </div>
+</div>`;
+      }
+
+      // ─── APP DETAIL ──────────────────────────────────────────────────────
+      function renderAppDetail(V) {
+        const a = currentApp();
+        if (!a) return "";
+        const st = sdStatus(a.status),
+          ty = sdType(a.type);
+        const isRunning = a.status === "running";
+        const isBusy = a.status === "building" || a.status === "deploying" || a.status === "restarting";
+        const isStopped = !isRunning && !isBusy;
+        const tabDefs = [
+          ["overview", "Overview"],
+          ["logs", "Logs"],
+          ["environment", "Environment"],
+          ["settings", "Settings"],
+          ["deployments", "Deployments"],
+        ];
+        const appTab = state.appTab;
+        return `<div style="width:100%;padding:${V.pagePad}">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap">
+        <h1 style="font-family:'Geist Mono';font-size:20px;font-weight:500;letter-spacing:-.01em">${a.name}</h1>
+        <span style="display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:6px;background:var(--surface-card);border:1px solid var(--border-main)"><span style="font-family:'Geist Mono';font-size:11px;color:${ty.color}">${ty.icon}</span><span style="font-size:11px;font-weight:500;color:var(--text-secondary)">${ty.label}</span></span>
+        ${statusChip(st.color, st.label, st.anim)}
+      </div>
+      <div style="font-family:'Geist Mono';font-size:12.5px;color:var(--text-secondary);margin-top:8px">${imgOf(a)}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex:none">
+      ${isStopped ? `<button ${h(() => startApp(a))} style="display:flex;align-items:center;gap:7px;height:34px;padding:0 13px;background:var(--surface-card);border:1px solid var(--border-input);color:var(--text-body);font-weight:500;font-size:13px;border-radius:8px;cursor:pointer" data-hov="border-color:#34d399;color:#34d399"><span style="font-family:'Geist Mono';color:#34d399">▷</span>Start</button>` : ""}
+      ${isRunning ? `<button ${h(() => stopApp(a))} style="display:flex;align-items:center;gap:7px;height:34px;padding:0 13px;background:var(--surface-card);border:1px solid var(--border-input);color:var(--text-body);font-weight:500;font-size:13px;border-radius:8px;cursor:pointer" data-hov="border-color:var(--border-strong)">Stop</button>` : ""}
+      <button ${h(() => restartApp(a))} style="display:flex;align-items:center;gap:7px;height:34px;padding:0 13px;background:var(--surface-card);border:1px solid var(--border-input);color:var(--text-body);font-weight:500;font-size:13px;border-radius:8px;cursor:pointer" data-hov="border-color:var(--border-strong)"><span style="font-family:'Geist Mono';color:#60a5fa">↻</span>Restart</button>
+      <button ${h(() => deployApp(a))} style="display:flex;align-items:center;gap:7px;height:34px;padding:0 15px;background:#fb923c;color:var(--on-accent);font-weight:600;font-size:13px;border:none;border-radius:8px;cursor:pointer" data-hov="background:#fdac6b"><span style="font-family:'Geist Mono'">⟳</span>Deploy</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:2px;border-bottom:1px solid var(--border-main);margin-bottom:20px;overflow-x:auto">
+    ${tabDefs
+      .map((t) => {
+        const active = appTab === t[0];
+        return `<button ${h(() => setAppTab(t[0]))} style="flex:none;background:none;border:none;border-bottom:2px solid ${active ? "#fb923c" : "transparent"};color:${active ? "var(--text-body)" : "var(--text-secondary)"};font-weight:${active ? "600" : "500"};font-size:13.5px;padding:9px 14px;cursor:pointer;margin-bottom:-1px;white-space:nowrap;transition:color .14s">${t[1]}</button>`;
+      })
+      .join("")}
+  </div>
+  ${appTab === "overview" ? renderAppOverview(a, V) : ""}
+  ${appTab === "logs" ? renderAppLogs(a) : ""}
+  ${appTab === "environment" ? renderAppEnv(a) : ""}
+  ${appTab === "settings" ? renderAppSettings(a) : ""}
+  ${appTab === "deployments" ? renderAppDeploys(a) : ""}
+</div>`;
+      }
+
+      function renderAppOverview(a, V) {
+        const isRunning = a.status === "running";
+        const isBusy = a.status === "building" || a.status === "deploying" || a.status === "restarting";
+        const cpuV = isRunning || isBusy ? a.cpuHist[a.cpuHist.length - 1] : 0;
+        const memV = isRunning || isBusy ? a.memHist[a.memHist.length - 1] : 0;
+        const netIn = isRunning ? 20 + cpuV * 6 : 0;
+        const cpuC = makePath(a.cpuHist, 560, 110, 100);
+        const memC = makePath(a.memHist, 560, 110, a.memLimit);
+        const over2 = V.width < 1280 ? "1fr" : "1.55fr 1fr";
+        const isFailed = a.status === "failed" || a.status === "exited";
+        const st = sdStatus(a.status);
+        return `${
+          isFailed
+            ? `<div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;margin-bottom:16px;background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.24);border-radius:11px">
+  <div style="width:30px;height:30px;flex:none;border-radius:8px;background:rgba(248,113,113,.12);display:flex;align-items:center;justify-content:center;color:#f87171;font-family:'Geist Mono';font-size:15px">!</div>
+  <div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#f87171;margin-bottom:3px">This app isn't running</div><div style="font-size:12.5px;color:var(--text-secondary);line-height:1.5">${a.type === "git" ? "The last build exited with code 1 while running the Dockerfile. Check the deploy log, fix the error, and redeploy." : "The container exited unexpectedly (code 1). Review the logs, then start it again."}</div></div>
+  <button ${h(() => deployApp(a))} style="height:32px;padding:0 13px;flex:none;background:var(--surface-card);border:1px solid rgba(248,113,113,.4);color:#f87171;font-weight:500;font-size:12.5px;border-radius:7px;cursor:pointer" data-hov="background:rgba(248,113,113,.14)">Redeploy</button>
+</div>`
+            : ``
+        }
+<div style="display:grid;grid-template-columns:${over2};gap:16px;align-items:start">
+  <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      <div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:10px;padding:13px 14px"><div style="font-size:11.5px;color:var(--text-secondary);margin-bottom:7px">CPU</div><div style="display:flex;align-items:baseline;gap:5px"><span style="font-family:'Geist Mono';font-size:20px;font-weight:500;color:var(--text-body);font-variant-numeric:tabular-nums">${cpuV.toFixed(1)}</span><span style="font-family:'Geist Mono';font-size:11px;color:var(--text-tertiary)">%</span></div></div>
+      <div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:10px;padding:13px 14px"><div style="font-size:11.5px;color:var(--text-secondary);margin-bottom:7px">Memory</div><div style="display:flex;align-items:baseline;gap:5px"><span style="font-family:'Geist Mono';font-size:20px;font-weight:500;color:var(--text-body);font-variant-numeric:tabular-nums">${memV.toFixed(0)}</span><span style="font-family:'Geist Mono';font-size:11px;color:var(--text-tertiary)">MB / ${a.memLimit}</span></div></div>
+      <div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:10px;padding:13px 14px"><div style="font-size:11.5px;color:var(--text-secondary);margin-bottom:7px">Network</div><div style="display:flex;align-items:baseline;gap:5px"><span style="font-family:'Geist Mono';font-size:20px;font-weight:500;color:var(--text-body);font-variant-numeric:tabular-nums">${fmtKB(netIn)}</span><span style="font-family:'Geist Mono';font-size:11px;color:var(--text-tertiary)">↓ in</span></div></div>
+    </div>
+    <div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;padding:15px 17px 11px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#fb923c"></span><span style="font-size:13px;font-weight:600">CPU</span></div><span style="font-family:'Geist Mono';font-size:13px;color:var(--text-secondary)">${cpuV.toFixed(1)}%</span></div>
+      <svg viewBox="0 0 560 110" preserveAspectRatio="none" style="width:100%;height:108px;display:block"><defs><linearGradient id="ov-cpu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb923c" stop-opacity="0.2"/><stop offset="1" stop-color="#fb923c" stop-opacity="0"/></linearGradient></defs><line x1="0" y1="55" x2="560" y2="55" stroke="var(--gridline)" stroke-width="1"/><path d="${cpuC.area}" fill="url(#ov-cpu)"/><path d="${cpuC.line}" fill="none" stroke="#fb923c" stroke-width="1.75" stroke-linejoin="round"/><circle cx="${cpuC.lastX}" cy="${cpuC.lastY}" r="3" fill="#fb923c"/></svg>
+    </div>
+    <div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;padding:15px 17px 11px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#34d399"></span><span style="font-size:13px;font-weight:600">Memory</span></div><span style="font-family:'Geist Mono';font-size:13px;color:var(--text-secondary)">${memV.toFixed(0)} / ${a.memLimit} MB</span></div>
+      <svg viewBox="0 0 560 110" preserveAspectRatio="none" style="width:100%;height:108px;display:block"><defs><linearGradient id="ov-mem" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34d399" stop-opacity="0.2"/><stop offset="1" stop-color="#34d399" stop-opacity="0"/></linearGradient></defs><line x1="0" y1="55" x2="560" y2="55" stroke="var(--gridline)" stroke-width="1"/><path d="${memC.area}" fill="url(#ov-mem)"/><path d="${memC.line}" fill="none" stroke="#34d399" stroke-width="1.75" stroke-linejoin="round"/><circle cx="${memC.lastX}" cy="${memC.lastY}" r="3" fill="#34d399"/></svg>
+    </div>
+  </div>
+  <div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;overflow:hidden;min-width:0">
+    <div style="padding:14px 16px 12px;border-bottom:1px solid var(--border-main)"><span style="font-size:13px;font-weight:600">Details</span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border-inner)"><span style="font-size:12.5px;color:var(--text-secondary)">Status</span><span style="font-size:12.5px;font-weight:500;color:${st.color}">${st.label}</span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border-inner)"><span style="font-size:12.5px;color:var(--text-secondary);flex:none">Image</span><span style="font-family:'Geist Mono';font-size:12px;color:var(--text-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${imgOf(a)}</span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border-inner)"><span style="font-size:12.5px;color:var(--text-secondary);flex:none">Container</span><span style="font-family:'Geist Mono';font-size:12px;color:var(--text-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.container}</span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px"><span style="font-size:12.5px;color:var(--text-secondary);flex:none">Ports</span><span style="font-family:'Geist Mono';font-size:12px;color:var(--text-body)">${portsLabel(a)}</span></div>
+  </div>
+</div>`;
+      }
+
+      function renderAppLogs(a) {
+        const filt = (state.logFilter || "").toLowerCase();
+        const lvlColor = { info: "var(--text-secondary)", debug: "var(--text-tertiary)", warn: "#fbbf24", error: "#f87171" };
+        const lvlBg = { info: "transparent", debug: "transparent", warn: "rgba(251,191,36,.06)", error: "rgba(248,113,113,.07)" };
+        const logRows = (a.logs || []).filter((l) => !filt || l.text.toLowerCase().includes(filt) || l.level.includes(filt)).slice(-220);
+        const logsFollow = state.logsFollow;
+        const followBg = logsFollow ? "rgba(52,211,153,.1)" : "var(--surface-card)";
+        const followBorder = logsFollow ? "rgba(52,211,153,.3)" : "var(--border-main)";
+        const followDot = logsFollow ? "#34d399" : "var(--text-tertiary)";
+        const followText = logsFollow ? "#34d399" : "var(--text-secondary)";
+        return `<div style="background:var(--surface-inset);border:1px solid var(--border-main);border-radius:11px;overflow:hidden;display:flex;flex-direction:column;height:560px">
+  <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border-main);background:var(--surface-2);flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:160px;height:32px;padding:0 11px;background:var(--surface-card);border:1px solid var(--border-main);border-radius:7px">
+      <span style="font-family:'Geist Mono';color:var(--text-tertiary);font-size:12px">⌕</span>
+      <input value="${state.logFilter}" ${hi((e) => setState({ logFilter: e.target.value }))} placeholder="Filter logs…" style="flex:1;background:none;border:none;color:var(--text-body);font-size:12.5px;font-family:'Geist Mono'">
+    </div>
+    <div ${h(() => setState((s) => ({ logsFollow: !s.logsFollow })))} style="display:flex;align-items:center;gap:8px;height:32px;padding:0 11px;background:${followBg};border:1px solid ${followBorder};border-radius:7px;cursor:pointer">
+      <span style="position:relative;width:7px;height:7px;flex:none"><span style="position:absolute;inset:0;border-radius:50%;background:${followDot}"></span>${logsFollow ? `<span style="position:absolute;inset:0;border-radius:50%;background:#34d399;animation:ringPulse 2s ease-out infinite"></span>` : ""}</span>
+      <span style="font-size:12px;font-weight:500;color:${followText}">${logsFollow ? "Following" : "Follow"}</span>
+    </div>
+    <div ${h(() => toast("success", "Copied logs to clipboard"))} style="display:flex;align-items:center;gap:7px;height:32px;padding:0 11px;background:var(--surface-card);border:1px solid var(--border-main);border-radius:7px;cursor:pointer;color:var(--text-secondary)" data-hov="color:var(--text-body);border-color:var(--border-strong)"><span style="font-family:'Geist Mono';font-size:12px">⧉</span><span style="font-size:12px">Copy</span></div>
+  </div>
+  <div id="log-scroll" style="flex:1;overflow-y:auto;padding:8px 0;font-family:'Geist Mono';font-size:12.5px;line-height:1.7">
+    ${logRows
+      .map(
+        (l) => `<div style="display:flex;gap:12px;padding:1px 14px;background:${lvlBg[l.level] || "transparent"}" data-hov="background:var(--surface-card)">
+      <span style="color:var(--text-mono-faint);flex:none;font-variant-numeric:tabular-nums">${l.ts}</span>
+      <span style="color:${lvlColor[l.level] || "var(--text-secondary)"};flex:none;width:46px;font-weight:500">${l.level.toUpperCase()}</span>
+      <span style="color:var(--text-muted);word-break:break-word">${l.text}</span>
+    </div>`,
+      )
+      .join("")}
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 14px;color:var(--text-mono-faint);font-size:11.5px"><span style="width:6px;height:11px;background:#34d399;display:inline-block;animation:blink 1.1s step-end infinite"></span>streaming · ${logRows.length} lines</div>
+  </div>
+</div>`;
+      }
+
+      function renderAppEnv(a) {
+        const draft = state.envDraft || a.env.map((r) => ({ key: r.key, value: r.value, secret: r.secret, reveal: false }));
+        if (!state.envDraft) setState({ envDraft: draft });
+        return `<div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;overflow:hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border-main)"><div><span style="font-size:13.5px;font-weight:600">Environment variables</span><span style="font-size:12px;color:var(--text-tertiary);margin-left:9px">${draft.length} variables</span></div></div>
+  <div style="display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--border-inner);font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em"><span style="flex:1">Key</span><span style="flex:1.4">Value</span><span style="width:140px;flex:none">Options</span></div>
+  ${draft
+    .map(
+      (r, i) => `<div style="display:flex;align-items:center;gap:10px;padding:7px 16px;border-bottom:1px solid var(--border-inner)">
+    <input value="${r.key}" ${hi((e) => edEnv(i, { key: e.target.value }))} placeholder="KEY" style="flex:1;height:34px;background:var(--surface-2);border:1px solid var(--border-main);border-radius:7px;padding:0 11px;color:var(--text-body);font-family:'Geist Mono';font-size:12.5px" onfocus="this.style.borderColor='#fb923c';this.style.boxShadow='0 0 0 3px rgba(251,146,60,.14)'" onblur="this.style.borderColor='';this.style.boxShadow=''">
+    <div style="flex:1.4;position:relative;display:flex;align-items:center">
+      <input value="${r.value}" ${hi((e) => edEnv(i, { value: e.target.value }))} placeholder="value" type="${r.secret && !r.reveal ? "password" : "text"}" style="flex:1;height:34px;background:var(--surface-2);border:1px solid var(--border-main);border-radius:7px;padding:0 ${r.secret ? "36px" : "11px"} 0 11px;color:var(--text-body);font-family:'Geist Mono';font-size:12.5px" onfocus="this.style.borderColor='#fb923c';this.style.boxShadow='0 0 0 3px rgba(251,146,60,.14)'" onblur="this.style.borderColor='';this.style.boxShadow=''">
+      ${r.secret ? `<div ${h(() => edEnv(i, { reveal: !r.reveal }))} style="position:absolute;right:9px;cursor:pointer;color:var(--text-tertiary);font-family:'Geist Mono';font-size:13px" title="Reveal" data-hov="color:var(--text-secondary)">${r.reveal ? "◉" : "○"}</div>` : ""}
+    </div>
+    <div style="width:140px;flex:none;display:flex;align-items:center;gap:10px">
+      <div ${h(() => edEnv(i, { secret: !r.secret }))} style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11.5px;color:${r.secret ? "var(--text-secondary)" : "var(--text-tertiary)"}">
+        <span style="width:26px;height:15px;border-radius:9px;background:${r.secret ? "#fb923c" : "var(--border-input)"};position:relative;transition:background .15s;flex:none"><span style="position:absolute;top:1.5px;left:${r.secret ? "13px" : "1.5px"};width:12px;height:12px;border-radius:50%;background:var(--text-body);transition:left .15s"></span></span>Secret
+      </div>
+      <div ${h(() => rmEnvRow(i))} style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;color:var(--text-tertiary);font-family:'Geist Mono'" data-hov="background:rgba(248,113,113,.12);color:#f87171">⌫</div>
+    </div>
+  </div>`,
+    )
+    .join("")}
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px">
+    <button ${h(() => addEnvRow())} style="display:flex;align-items:center;gap:7px;height:32px;padding:0 12px;background:var(--surface-card);border:1px dashed var(--border-strong);color:var(--text-secondary);font-size:12.5px;border-radius:7px;cursor:pointer" data-hov="color:var(--text-body);border-color:#fb923c"><span style="font-size:14px;line-height:1">+</span>Add variable</button>
+    <button ${h(() => saveEnv(a))} style="height:34px;padding:0 16px;background:#fb923c;color:var(--on-accent);font-weight:600;font-size:13px;border:none;border-radius:8px;cursor:pointer" data-hov="background:#fdac6b">Save changes</button>
+  </div>
+</div>`;
+      }
+
+      function renderAppSettings(a) {
+        const vols = a.volumes || (a.type === "template" ? [{ name: a.name + "-data", path: "/var/lib/postgresql/data" }] : []);
+        const restart = a.restart || "unless-stopped";
+        const restartOpts = ["no", "on-failure", "unless-stopped", "always"];
+        return `<div style="display:flex;flex-direction:column;gap:16px;max-width:760px">
+  <div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;overflow:hidden">
+    <div style="padding:13px 16px;border-bottom:1px solid var(--border-main)"><span style="font-size:13.5px;font-weight:600">Port mappings</span><span style="font-size:12px;color:var(--text-tertiary);margin-left:9px">host → container</span></div>
+    ${(a.ports || [])
+      .map(
+        (p) => `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-inner)">
+      <input value="${p.host}" style="width:96px;height:32px;background:var(--surface-2);border:1px solid var(--border-main);border-radius:7px;padding:0 11px;color:var(--text-body);font-family:'Geist Mono';font-size:12.5px" onfocus="this.style.borderColor='#fb923c'" onblur="this.style.borderColor=''">
+      <span style="color:var(--text-mono-faint);font-family:'Geist Mono'">:</span>
+      <input value="${p.container}" style="width:96px;height:32px;background:var(--surface-2);border:1px solid var(--border-main);border-radius:7px;padding:0 11px;color:var(--text-body);font-family:'Geist Mono';font-size:12.5px" onfocus="this.style.borderColor='#fb923c'" onblur="this.style.borderColor=''">
+      <span style="display:inline-flex;align-items:center;height:32px;padding:0 11px;background:var(--surface-2);border:1px solid var(--border-main);border-radius:7px;font-family:'Geist Mono';font-size:12px;color:var(--text-secondary)">${p.proto}</span>
+    </div>`,
+      )
+      .join("")}
+    <div style="padding:11px 16px"><button style="display:flex;align-items:center;gap:7px;height:30px;padding:0 11px;background:var(--surface-card);border:1px dashed var(--border-strong);color:var(--text-secondary);font-size:12px;border-radius:7px;cursor:pointer" data-hov="color:var(--text-body);border-color:#fb923c"><span style="font-size:13px;line-height:1">+</span>Add port</button></div>
+  </div>
+  <div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;overflow:hidden">
+    <div style="padding:13px 16px;border-bottom:1px solid var(--border-main)"><span style="font-size:13.5px;font-weight:600">Volume mounts</span></div>
+    ${
+      vols.length > 0
+        ? vols
+            .map(
+              (v) => `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-inner)">
+      <span style="font-family:'Geist Mono';font-size:12.5px;color:#a78bfa">${v.name}</span><span style="color:var(--text-mono-faint);font-family:'Geist Mono'">→</span><span style="font-family:'Geist Mono';font-size:12.5px;color:var(--text-body)">${v.path}</span>
+    </div>`,
+            )
+            .join("")
+        : `<div style="padding:16px;font-size:12.5px;color:var(--text-tertiary)">No volumes mounted. Data is ephemeral and lost when the container is removed.</div>`
+    }
+    <div style="padding:11px 16px"><button style="display:flex;align-items:center;gap:7px;height:30px;padding:0 11px;background:var(--surface-card);border:1px dashed var(--border-strong);color:var(--text-secondary);font-size:12px;border-radius:7px;cursor:pointer" data-hov="color:var(--text-body);border-color:#fb923c"><span style="font-size:13px;line-height:1">+</span>Add volume</button></div>
+  </div>
+  <div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+    <div><div style="font-size:13.5px;font-weight:600;margin-bottom:3px">Restart policy</div><div style="font-size:12px;color:var(--text-secondary)">When the container exits, Docker decides whether to restart it.</div></div>
+    <div style="display:flex;gap:6px">
+      ${restartOpts
+        .map((o) => {
+          const act = restart === o;
+          return `<div ${h(() => {
+            a.restart = o;
+            setState((s) => ({ tick: s.tick + 1 }));
+          })} style="height:32px;padding:0 12px;display:flex;align-items:center;border-radius:7px;cursor:pointer;font-family:'Geist Mono',monospace;font-size:12px;background:${act ? "rgba(251,146,60,.14)" : "var(--surface-2)"};border:1px solid ${act ? "#fb923c" : "var(--border-main)"};color:${act ? "#fb923c" : "var(--text-secondary)"}">${o}</div>`;
+        })
+        .join("")}
+    </div>
+  </div>
+  <div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;overflow:hidden">
+    <div style="padding:13px 16px;border-bottom:1px solid var(--border-main)"><span style="font-size:13.5px;font-weight:600">${a.type === "git" ? "Source" : "Image"}</span></div>
+    ${
+      a.type === "git"
+        ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border-inner)"><span style="font-size:12.5px;color:var(--text-secondary)">Repository</span><span style="font-family:'Geist Mono';font-size:12px;color:var(--text-body)">${a.repo || ""}</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border-inner)"><span style="font-size:12.5px;color:var(--text-secondary)">Branch</span><span style="font-family:'Geist Mono';font-size:12px;color:var(--text-body)">${a.branch || ""}</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px"><span style="font-size:12.5px;color:var(--text-secondary)">Dockerfile path</span><span style="font-family:'Geist Mono';font-size:12px;color:var(--text-body)">${a.dockerfile || "Dockerfile"}</span></div>
+    `
+        : `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px"><span style="font-size:12.5px;color:var(--text-secondary)">Image</span><span style="font-family:'Geist Mono';font-size:12px;color:var(--text-body)">${a.image || ""}</span></div>`
+    }
+  </div>
+  <div style="background:rgba(248,113,113,.04);border:1px solid rgba(248,113,113,.22);border-radius:11px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+    <div><div style="font-size:13.5px;font-weight:600;color:#f87171;margin-bottom:3px">Remove application</div><div style="font-size:12px;color:var(--text-secondary)">Stops and deletes this container and its config. This can't be undone.</div></div>
+    <button ${h(() => askDelete(a))} style="height:34px;padding:0 14px;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.4);color:#f87171;font-weight:500;font-size:13px;border-radius:8px;cursor:pointer" data-hov="background:rgba(248,113,113,.2)">Remove application</button>
+  </div>
+</div>`;
+      }
+
+      function renderAppDeploys(a) {
+        const rows = a.deployments || [];
+        if (rows.length === 0)
+          return `<div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:54px 24px;background:var(--surface-2);border:1px dashed var(--border-input);border-radius:12px">
+    <div style="font-size:14.5px;font-weight:600">No deployments yet</div><div style="font-size:13px;color:var(--text-secondary)">Deploy this app to see its build and release history here.</div>
+    <button ${h(() => deployApp(a))} style="height:34px;padding:0 15px;background:#fb923c;color:var(--on-accent);font-weight:600;font-size:13px;border:none;border-radius:8px;cursor:pointer">Deploy now</button>
+  </div>`;
+        return `<div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:11px;overflow:hidden">
+  <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border-main);font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em">
+    <span style="width:108px;flex:none">Status</span><span style="flex:1">Image tag</span><span style="flex:1">Trigger</span><span style="width:120px;flex:none">Started</span><span style="width:70px;flex:none;text-align:right">Duration</span>
+  </div>
+  ${rows
+    .map((d) => {
+      const ds = sdStatus(d.status);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border-inner)" data-hov="background:var(--surface-inset)">
+    <span style="width:108px;flex:none;display:inline-flex;align-items:center;gap:6px">${statusDot(ds.color, ds.anim)}<span style="font-size:12px;font-weight:500;color:${ds.color}">${ds.label}</span></span>
+    <span style="flex:1;font-family:'Geist Mono';font-size:12.5px;color:var(--text-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.tag}</span>
+    <span style="flex:1;font-size:12.5px;color:var(--text-secondary)">${d.trigger}</span>
+    <span style="width:120px;flex:none;font-family:'Geist Mono';font-size:12px;color:var(--text-secondary)">${d.started}</span>
+    <span style="width:70px;flex:none;text-align:right;font-family:'Geist Mono';font-size:12px;color:var(--text-secondary)">${d.dur}</span>
+  </div>`;
+    })
+    .join("")}
+</div>`;
+      }
+
+      // ─── OVERLAYS ───────────────────────────────────────────────────────
+      function renderOverlays(V) {
+        let out = "";
+        const isMob = V.isMobile;
+        const overlayStyle =
+          "position:fixed;inset:0;z-index:80;background:rgba(5,5,7,.66);backdrop-filter:blur(3px);display:flex;" +
+          (isMob ? "align-items:flex-end;justify-content:stretch" : "align-items:center;justify-content:center;padding:24px");
+        const addCardStyle =
+          "background:var(--surface-2);border:1px solid var(--border-input);display:flex;flex-direction:column;" +
+          (isMob
+            ? "width:100%;height:92vh;border-radius:16px 16px 0 0;animation:sheetUp .24s cubic-bezier(.2,.7,.3,1) both"
+            : "width:min(560px,100%);max-height:88vh;border-radius:14px;animation:modalPop .2s ease-out both");
+        const dlgCardStyle =
+          "background:var(--surface-2);border:1px solid var(--border-input);" +
+          (isMob
+            ? "width:100%;border-radius:16px 16px 0 0;animation:sheetUp .24s cubic-bezier(.2,.7,.3,1) both;padding:22px"
+            : "width:min(420px,100%);border-radius:14px;animation:modalPop .2s ease-out both;padding:22px");
+
+        // ── Add Application ──
+        if (state.addAppOpen) {
+          const f = state.addForm || {},
+            err = state.addAppErr || {},
+            tab = state.addAppTab;
+          const seg = (act) =>
+            "flex:1;height:36px;display:flex;align-items:center;justify-content:center;gap:7px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:500;transition:background .14s,color .14s;background:" +
+            (act ? "var(--surface-raised)" : "transparent") +
+            ";color:" +
+            (act ? "var(--text-body)" : "var(--text-secondary)") +
+            ";border:1px solid " +
+            (act ? "var(--border-strong)" : "transparent");
+          const tabDefs = [
+            ["git", "Git"],
+            ["docker", "Docker"],
+            ["template", "Templates"],
+          ];
+          const verOpts = ["16", "15", "14", "13"];
+          const buildArgs = f.buildArgs || [];
+          out += `<div ${h(() => setState({ addAppOpen: false }))} style="${overlayStyle}">
+    <div ${h((ev) => ev && ev.stopPropagation && ev.stopPropagation())} style="${addCardStyle}">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid var(--border-main);flex:none">
+        <div><div style="font-size:16px;font-weight:600;letter-spacing:-.01em">Add application</div><div style="font-size:12.5px;color:var(--text-secondary);margin-top:2px">Deploy a new Docker container into this environment.</div></div>
+        <div ${h(() => setState({ addAppOpen: false }))} style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;color:var(--text-secondary);font-family:'Geist Mono';font-size:16px" data-hov="background:var(--surface-raised);color:var(--text-body)">✕</div>
+      </div>
+      <div style="padding:14px 20px 0;flex:none">
+        <div style="display:flex;gap:4px;padding:4px;background:var(--surface-card);border:1px solid var(--border-main);border-radius:9px">
+          ${tabDefs
+            .map((t) => {
+              const act = tab === t[0];
+              return `<div ${h(() => setState({ addAppTab: t[0], addAppErr: {} }))} style="${seg(act)}">${t[1]}</div>`;
+            })
+            .join("")}
+        </div>
+      </div>
+      <div style="padding:18px 20px 20px;overflow-y:auto;overflow-x:hidden;flex:1;min-width:0">
+        <div style="margin-bottom:16px">
+          <label style="display:block;font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:7px">Name</label>
+          <input value="${f.name || ""}" ${hi((e) => {
+            setForm({ name: e.target.value });
+            clearErr("name");
+          })} placeholder="my-app" style="width:100%;height:40px;background:var(--bg);border:1px solid ${err.name ? "#f87171" : "var(--border-input)"};border-radius:8px;padding:0 12px;color:var(--text-body);font-family:'Geist Mono';font-size:13px" onfocus="this.style.borderColor='#fb923c';this.style.boxShadow='0 0 0 3px rgba(251,146,60,.14)'" onblur="this.style.borderColor='${err.name ? "#f87171" : ""}'">
+          ${err.name ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f87171;margin-top:7px"><span style="width:4px;height:4px;border-radius:50%;background:#f87171"></span>${err.name}</div>` : ""}
+        </div>
+        ${
+          tab === "git"
+            ? `
+          <div style="margin-bottom:16px">
+            <label style="display:block;font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:7px">Repository URL</label>
+            <input value="${f.repo || ""}" ${hi((e) => {
+              setForm({ repo: e.target.value });
+              clearErr("repo");
+            })} placeholder="github.com/acme/my-app" style="width:100%;height:40px;background:var(--bg);border:1px solid ${err.repo ? "#f87171" : "var(--border-input)"};border-radius:8px;padding:0 12px;color:var(--text-body);font-family:'Geist Mono';font-size:13px" onfocus="this.style.borderColor='#fb923c'" onblur="">
+            ${err.repo ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f87171;margin-top:7px"><span style="width:4px;height:4px;border-radius:50%;background:#f87171"></span>${err.repo}</div>` : ""}
+          </div>
+          <div style="display:flex;gap:12px;margin-bottom:16px">
+            <div style="flex:1"><label style="display:block;font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:7px">Branch</label><input value="${f.branch || "main"}" ${hi((e) => setForm({ branch: e.target.value }))} placeholder="main" style="width:100%;height:40px;background:var(--bg);border:1px solid var(--border-input);border-radius:8px;padding:0 12px;color:var(--text-body);font-family:'Geist Mono';font-size:13px" onfocus="this.style.borderColor='#fb923c'" onblur=""></div>
+            <div style="flex:1"><label style="display:block;font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:7px">Dockerfile path</label><input value="${f.dockerfile || "Dockerfile"}" ${hi((e) => setForm({ dockerfile: e.target.value }))} placeholder="Dockerfile" style="width:100%;height:40px;background:var(--bg);border:1px solid var(--border-input);border-radius:8px;padding:0 12px;color:var(--text-body);font-family:'Geist Mono';font-size:13px" onfocus="this.style.borderColor='#fb923c'" onblur=""></div>
+          </div>
+          <div style="margin-bottom:16px">
+            <label style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:7px">Build args <span style="font-size:11px;color:var(--text-tertiary);font-weight:400">optional</span></label>
+            ${buildArgs
+              .map(
+                (b, i) => `<div style="display:flex;gap:8px;margin-bottom:8px">
+              <input value="${b.k}" ${hi((e) => setArg(i, { k: e.target.value }))} placeholder="KEY" style="flex:1;height:36px;background:var(--bg);border:1px solid var(--border-input);border-radius:8px;padding:0 11px;color:var(--text-body);font-family:'Geist Mono';font-size:12.5px" onfocus="this.style.borderColor='#fb923c'" onblur="">
+              <input value="${b.v}" ${hi((e) => setArg(i, { v: e.target.value }))} placeholder="value" style="flex:1.3;height:36px;background:var(--bg);border:1px solid var(--border-input);border-radius:8px;padding:0 11px;color:var(--text-body);font-family:'Geist Mono';font-size:12.5px" onfocus="this.style.borderColor='#fb923c'" onblur="">
+              <div ${h(() => rmArg(i))} style="width:36px;height:36px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;color:var(--text-tertiary);font-family:'Geist Mono'" data-hov="background:rgba(248,113,113,.12);color:#f87171">⌫</div>
+            </div>`,
+              )
+              .join("")}
+            <button ${h(() => addArg())} style="display:flex;align-items:center;gap:6px;height:32px;padding:0 11px;background:transparent;border:1px dashed var(--border-strong);color:var(--text-secondary);font-size:12px;border-radius:7px;cursor:pointer" data-hov="color:var(--text-body);border-color:#fb923c"><span style="font-size:14px;line-height:1">+</span>Add build arg</button>
+          </div>
+          <div>
+            <label style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:7px">Auth token <span style="font-size:11px;color:var(--text-tertiary);font-weight:400">private repos only</span></label>
+            <input value="${f.token || ""}" ${hi((e) => setForm({ token: e.target.value }))} type="password" placeholder="ghp_••••••••••••" style="width:100%;height:40px;background:var(--bg);border:1px solid var(--border-input);border-radius:8px;padding:0 12px;color:var(--text-body);font-family:'Geist Mono';font-size:13px" onfocus="this.style.borderColor='#fb923c'" onblur="">
+          </div>`
+            : ""
+        }
+        ${
+          tab === "docker"
+            ? `<div>
+          <label style="display:block;font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:7px">Image</label>
+          <input value="${f.image || ""}" ${hi((e) => {
+            setForm({ image: e.target.value });
+            clearErr("image");
+          })} placeholder="nginx:1.27-alpine" style="width:100%;height:40px;background:var(--bg);border:1px solid ${err.image ? "#f87171" : "var(--border-input)"};border-radius:8px;padding:0 12px;color:var(--text-body);font-family:'Geist Mono';font-size:13px" onfocus="this.style.borderColor='#fb923c'" onblur="">
+          ${err.image ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f87171;margin-top:7px"><span style="width:4px;height:4px;border-radius:50%;background:#f87171"></span>${err.image}</div>` : ""}
+          <div style="font-size:12px;color:var(--text-tertiary);margin-top:9px;line-height:1.5">Pulled from Docker Hub unless you give a full registry path, e.g. <span style="font-family:'Geist Mono';color:var(--text-secondary)">ghcr.io/acme/api:2.3.1</span>.</div>
+        </div>`
+            : ""
+        }
+        ${
+          tab === "template"
+            ? `<div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+            <div style="background:var(--surface-card);border:1.5px solid #fb923c;border-radius:10px;padding:13px 14px;position:relative">
+              <div style="position:absolute;top:11px;right:12px;width:16px;height:16px;border-radius:50%;background:#fb923c;display:flex;align-items:center;justify-content:center;color:var(--on-accent);font-size:10px">✓</div>
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px"><div style="width:30px;height:30px;border-radius:8px;background:rgba(96,165,250,.12);display:flex;align-items:center;justify-content:center;font-family:'Geist Mono';color:#60a5fa;font-size:15px">◆</div><span style="font-weight:600;font-size:13.5px">PostgreSQL</span></div>
+              <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.4">Relational database</div>
+            </div>
+            <div style="background:var(--surface-2);border:1px dashed var(--border-input);border-radius:10px;padding:13px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;color:var(--text-tertiary)"><span style="font-size:13px;font-weight:500">More soon</span><span style="font-size:11px">Redis, MySQL, MongoDB…</span></div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-main);border-radius:10px;padding:15px 16px">
+            <div style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px">PostgreSQL settings</div>
+            <div style="margin-bottom:14px"><label style="display:block;font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:7px">Version</label><div style="display:flex;gap:6px">${verOpts
+              .map((v) => {
+                const act = (f.tplVersion || "16") === v;
+                return `<div ${h(() => setForm({ tplVersion: v }))} style="height:32px;padding:0 14px;display:flex;align-items:center;border-radius:7px;cursor:pointer;font-family:'Geist Mono',monospace;font-size:12.5px;background:${act ? "rgba(251,146,60,.14)" : "var(--surface-2)"};border:1px solid ${act ? "#fb923c" : "var(--border-main)"};color:${act ? "#fb923c" : "var(--text-secondary)"}">${v}</div>`;
+              })
+              .join("")}</div></div>
+            <div style="display:flex;gap:12px;margin-bottom:14px">
+              <div style="flex:1"><label style="display:block;font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:7px">User</label><input value="${f.tplUser || "app"}" ${hi((e) => setForm({ tplUser: e.target.value }))} placeholder="app" style="width:100%;height:38px;background:var(--bg);border:1px solid var(--border-input);border-radius:8px;padding:0 11px;color:var(--text-body);font-family:'Geist Mono';font-size:12.5px" onfocus="this.style.borderColor='#fb923c'" onblur=""></div>
+              <div style="flex:1"><label style="display:block;font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:7px">Database</label><input value="${f.tplDb || "app"}" ${hi((e) => setForm({ tplDb: e.target.value }))} placeholder="app" style="width:100%;height:38px;background:var(--bg);border:1px solid var(--border-input);border-radius:8px;padding:0 11px;color:var(--text-body);font-family:'Geist Mono';font-size:12.5px" onfocus="this.style.borderColor='#fb923c'" onblur=""></div>
+            </div>
+            <div style="display:flex;gap:12px">
+              <div style="flex:1.4"><label style="display:block;font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:7px">Password</label><div style="position:relative;display:flex;align-items:center"><input value="${f.tplPass || ""}" ${hi(
+                (e) => {
+                  setForm({ tplPass: e.target.value });
+                  clearErr("tplPass");
+                },
+              )} type="${state.addTplReveal ? "text" : "password"}" placeholder="set a strong password" style="width:100%;height:38px;background:var(--bg);border:1px solid ${err.tplPass ? "#f87171" : "var(--border-input)"};border-radius:8px;padding:0 34px 0 11px;color:var(--text-body);font-family:'Geist Mono';font-size:12.5px" onfocus="this.style.borderColor='#fb923c'" onblur=""><div ${h(() => setState((s) => ({ addTplReveal: !s.addTplReveal })))} style="position:absolute;right:9px;cursor:pointer;color:var(--text-tertiary);font-family:'Geist Mono';font-size:13px" data-hov="color:var(--text-secondary)">${state.addTplReveal ? "◉" : "○"}</div></div>${err.tplPass ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f87171;margin-top:7px"><span style="width:4px;height:4px;border-radius:50%;background:#f87171"></span>${err.tplPass}</div>` : ""}</div>
+              <div style="flex:1"><label style="display:block;font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:7px">Host port</label><input value="${f.tplPort || "5432"}" ${hi((e) => setForm({ tplPort: e.target.value }))} placeholder="5432" style="width:100%;height:38px;background:var(--bg);border:1px solid var(--border-input);border-radius:8px;padding:0 11px;color:var(--text-body);font-family:'Geist Mono';font-size:12.5px" onfocus="this.style.borderColor='#fb923c'" onblur=""></div>
+            </div>
+          </div>
+        </div>`
+            : ""
+        }
+      </div>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:9px;padding:14px 20px;border-top:1px solid var(--border-main);flex:none">
+        <button ${h(() => setState({ addAppOpen: false }))} style="height:36px;padding:0 15px;background:var(--surface-card);border:1px solid var(--border-input);color:var(--text-body);font-weight:500;font-size:13px;border-radius:8px;cursor:pointer" data-hov="border-color:var(--border-strong)">Cancel</button>
+        <button ${h(() => createApp())} style="height:36px;padding:0 16px;background:#fb923c;color:var(--on-accent);font-weight:600;font-size:13px;border:none;border-radius:8px;cursor:pointer" data-hov="background:#fdac6b">Create application</button>
+      </div>
+    </div>
+  </div>`;
+        }
+
+        // ── New Project ──
+        if (state.newProjectOpen) {
+          out += `<div ${h(() => setState({ newProjectOpen: false }))} style="${overlayStyle}">
+    <div ${h((ev) => ev && ev.stopPropagation && ev.stopPropagation())} style="${dlgCardStyle}">
+      <div style="font-size:16px;font-weight:600;letter-spacing:-.01em;margin-bottom:4px">New project</div>
+      <div style="font-size:12.5px;color:var(--text-secondary);margin-bottom:18px">Projects group related apps and their environments.</div>
+      <label style="display:block;font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:7px">Project name</label>
+      <input value="${state.npName}" ${hi((e) => setState({ npName: e.target.value, npErr: "" }))} placeholder="my-project" style="width:100%;height:40px;background:var(--bg);border:1px solid ${state.npErr ? "#f87171" : "var(--border-input)"};border-radius:8px;padding:0 12px;color:var(--text-body);font-family:'Geist Mono';font-size:13px" onfocus="this.style.borderColor='#fb923c';this.style.boxShadow='0 0 0 3px rgba(251,146,60,.14)'" onblur="this.style.boxShadow=''">
+      ${state.npErr ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f87171;margin-top:7px"><span style="width:4px;height:4px;border-radius:50%;background:#f87171"></span>${state.npErr}</div>` : ""}
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:9px;margin-top:22px">
+        <button ${h(() => setState({ newProjectOpen: false }))} style="height:36px;padding:0 15px;background:var(--surface-card);border:1px solid var(--border-input);color:var(--text-body);font-weight:500;font-size:13px;border-radius:8px;cursor:pointer" data-hov="border-color:var(--border-strong)">Cancel</button>
+        <button ${h(() => createProject())} style="height:36px;padding:0 16px;background:#fb923c;color:var(--on-accent);font-weight:600;font-size:13px;border:none;border-radius:8px;cursor:pointer" data-hov="background:#fdac6b">Create project</button>
+      </div>
+    </div>
+  </div>`;
+        }
+
+        // ── New Env ──
+        if (state.newEnvOpen) {
+          out += `<div ${h(() => setState({ newEnvOpen: false }))} style="${overlayStyle}">
+    <div ${h((ev) => ev && ev.stopPropagation && ev.stopPropagation())} style="${dlgCardStyle}">
+      <div style="font-size:16px;font-weight:600;letter-spacing:-.01em;margin-bottom:4px">New environment</div>
+      <div style="font-size:12.5px;color:var(--text-secondary);margin-bottom:18px">Environments isolate apps, like production or staging.</div>
+      <label style="display:block;font-size:12.5px;font-weight:500;color:var(--text-secondary);margin-bottom:7px">Environment name</label>
+      <input value="${state.neName}" ${hi((e) => setState({ neName: e.target.value, neErr: "" }))} placeholder="production" style="width:100%;height:40px;background:var(--bg);border:1px solid ${state.neErr ? "#f87171" : "var(--border-input)"};border-radius:8px;padding:0 12px;color:var(--text-body);font-family:'Geist Mono';font-size:13px" onfocus="this.style.borderColor='#fb923c';this.style.boxShadow='0 0 0 3px rgba(251,146,60,.14)'" onblur="this.style.boxShadow=''">
+      ${state.neErr ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f87171;margin-top:7px"><span style="width:4px;height:4px;border-radius:50%;background:#f87171"></span>${state.neErr}</div>` : ""}
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:9px;margin-top:22px">
+        <button ${h(() => setState({ newEnvOpen: false }))} style="height:36px;padding:0 15px;background:var(--surface-card);border:1px solid var(--border-input);color:var(--text-body);font-weight:500;font-size:13px;border-radius:8px;cursor:pointer" data-hov="border-color:var(--border-strong)">Cancel</button>
+        <button ${h(() => createEnv())} style="height:36px;padding:0 16px;background:#fb923c;color:var(--on-accent);font-weight:600;font-size:13px;border:none;border-radius:8px;cursor:pointer" data-hov="background:#fdac6b">Create environment</button>
+      </div>
+    </div>
+  </div>`;
+        }
+
+        // ── Confirm ──
+        if (state.confirm) {
+          const c = state.confirm;
+          out += `<div ${h(() => setState({ confirm: null }))} style="${overlayStyle}">
+    <div ${h((ev) => ev && ev.stopPropagation && ev.stopPropagation())} style="${dlgCardStyle}">
+      <div style="display:flex;align-items:flex-start;gap:13px">
+        <div style="width:34px;height:34px;flex:none;border-radius:9px;background:rgba(248,113,113,.12);display:flex;align-items:center;justify-content:center;color:#f87171;font-family:'Geist Mono';font-size:16px">⚠</div>
+        <div style="min-width:0"><div style="font-size:15.5px;font-weight:600;letter-spacing:-.01em;margin-bottom:5px">${c.title}</div><div style="font-size:13px;color:var(--text-secondary);line-height:1.5">${c.body}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:9px;margin-top:22px">
+        <button ${h(() => setState({ confirm: null }))} style="height:36px;padding:0 15px;background:var(--surface-card);border:1px solid var(--border-input);color:var(--text-body);font-weight:500;font-size:13px;border-radius:8px;cursor:pointer" data-hov="border-color:var(--border-strong)">Cancel</button>
+        <button ${h(() => {
+          if (c.onConfirm) c.onConfirm();
+        })} style="height:36px;padding:0 15px;background:${c.danger ? "#f87171" : "#fb923c"};color:var(--on-accent);font-weight:600;font-size:13px;border:none;border-radius:8px;cursor:pointer" data-hov="filter:brightness(1.08)">${c.confirmLabel || "Confirm"}</button>
+      </div>
+    </div>
+  </div>`;
+        }
+
+        // ── Build Drawer ──
+        const bd = state.buildDrawer;
+        if (bd) {
+          const cm = { info: "var(--text-secondary)", dim: "var(--text-tertiary)", ok: "#34d399", err: "#f87171" };
+          const barColor = bd.done ? "#34d399" : "#60a5fa";
+          out += `<div ${h(() => setState({ buildDrawer: null }))} style="position:fixed;inset:0;z-index:75;background:rgba(5,5,7,.5)"></div>
+    <div style="position:fixed;top:0;right:0;bottom:0;z-index:80;width:${isMob ? "100%" : "min(540px,100%)"};background:var(--surface-inset);border-left:1px solid var(--border-input);display:flex;flex-direction:column;animation:drawerIn .26s cubic-bezier(.2,.7,.3,1) both;box-shadow:-20px 0 60px -20px rgba(0,0,0,.6)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border-main);flex:none">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+          <span style="position:relative;width:8px;height:8px;flex:none"><span style="position:absolute;inset:0;border-radius:50%;background:${barColor}"></span><span style="position:absolute;inset:0;border-radius:50%;background:${barColor};animation:ringPulse 1.8s ease-out infinite"></span></span>
+          <div style="min-width:0"><div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px">Deploying <span style="font-family:'Geist Mono';color:var(--text-secondary)">${bd.appName}</span></div></div>
+        </div>
+        <div ${h(() => setState({ buildDrawer: null }))} style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;color:var(--text-secondary);font-family:'Geist Mono';font-size:16px" data-hov="background:var(--surface-raised);color:var(--text-body)">✕</div>
+      </div>
+      <div style="padding:14px 18px 10px;flex:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--text-secondary)">${bd.phase}</span><span style="font-family:'Geist Mono';font-size:12px;color:var(--text-secondary)">${bd.pct}%</span></div>
+        <div style="height:5px;border-radius:3px;background:var(--surface-card);overflow:hidden"><div style="height:100%;width:${bd.pct}%;background:${barColor};border-radius:3px;transition:width .4s ease"></div></div>
+      </div>
+      <div id="build-scroll" style="flex:1;overflow-y:auto;padding:8px 18px 18px;font-family:'Geist Mono';font-size:12px;line-height:1.75">
+        ${bd.lines.map((l) => `<div style="display:flex;gap:10px"><span style="color:var(--text-ghost);flex:none">$</span><span style="color:${cm[l.k] || "var(--text-secondary)"};word-break:break-word">${l.t}</span></div>`).join("")}
+        ${bd.done ? `<div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:9px 11px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.22);border-radius:8px;color:#34d399;font-family:'Geist';font-size:12.5px"><span>✓</span>Deployment finished</div>` : ""}
+      </div>
+    </div>`;
+        }
+
+        // ── Toasts ──
+        if (state.toasts && state.toasts.length) {
+          out += `<div style="position:fixed;bottom:18px;right:18px;display:flex;flex-direction:column;gap:9px;z-index:90;pointer-events:none">
+    ${state.toasts
+      .map(
+        (
+          t,
+        ) => `<div style="display:flex;align-items:center;gap:10px;min-width:230px;max-width:340px;padding:11px 13px;background:var(--surface-raised);border:1px solid var(--border-input);border-left:3px solid ${t.color};border-radius:9px;box-shadow:0 14px 34px -10px rgba(0,0,0,.7);animation:toastIn .2s ease-out both;pointer-events:auto">
+      ${t.spin ? `<span style="width:13px;height:13px;flex:none;border:2px solid ${t.color};border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite"></span>` : ""}
+      ${t.dot ? `<span style="width:7px;height:7px;flex:none;border-radius:50%;background:${t.color}"></span>` : ""}
+      <span style="font-size:13px;color:var(--text-body);flex:1">${t.msg}</span>
+    </div>`,
+      )
+      .join("")}
+  </div>`;
+        }
+
+        return out;
+      }
+
+      // ─── MAIN RENDER ────────────────────────────────────────────────────
+      let _raf = null;
+      function scheduleRender() {
+        if (!_raf) _raf = requestAnimationFrame(doRender);
+      }
+      function doRender() {
+        _raf = null;
+        // Reset handler registry
+        Object.keys(H).forEach((k) => delete H[k]);
+        _hi = 0;
+
+        const W = state.width;
+        const isMobile = W < 768,
+          isTablet = W >= 768 && W < 1280;
+        const V = {
+          screen: state.route.screen,
+          isMobile,
+          isTablet,
+          width: W,
+          expanded: !state.sidebarCollapsed && !isTablet && !isMobile,
+          pagePad: isMobile ? "18px 14px 40px" : "26px 30px 48px",
+        };
+
+        let html = "";
+        if (state.view === "setup") {
+          html = renderSetup();
+        } else if (state.view === "login") {
+          html = renderLogin();
+        } else {
+          const expanded = V.expanded;
+          html = `<div style="display:flex;height:100vh;width:100vw;overflow:hidden;background:var(--bg)">
+    ${!isMobile ? renderSidebar(V) : ""}
+    ${renderMobileDrawer()}
+    <div style="flex:1;display:flex;flex-direction:column;min-width:0;height:100vh">
+      ${renderTopbar(V)}
+      <main style="flex:1;overflow-y:auto;overflow-x:hidden;position:relative">
+        ${
+          state.loading && V.screen !== "app"
+            ? `<div style="position:absolute;inset:0;background:var(--bg);z-index:6">
+          <div style="width:100%;padding:${V.pagePad}">
+            <div class="skel" style="width:190px;height:24px;margin-bottom:10px"></div>
+            <div class="skel" style="width:300px;height:14px;margin-bottom:26px;opacity:.6"></div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px">
+              <div class="skel" style="height:118px"></div><div class="skel" style="height:118px"></div><div class="skel" style="height:118px"></div><div class="skel" style="height:118px"></div>
+            </div>
+          </div>
+        </div>`
+            : ""
+        }
+        ${V.screen === "dashboard" ? renderDashboard(V) : ""}
+        ${V.screen === "projects" ? renderProjects(V) : ""}
+        ${V.screen === "project" ? renderProjectDetail(V) : ""}
+        ${V.screen === "environment" ? renderEnvDetail(V) : ""}
+        ${V.screen === "app" ? renderAppDetail(V) : ""}
+      </main>
+    </div>
+    ${renderOverlays(V)}
+  </div>`;
+        }
+
+        document.getElementById("root").innerHTML = html;
+
+        // scroll log to bottom
+        if (state.view === "app" && state.route.screen === "app" && state.appTab === "logs" && state.logsFollow) {
+          const el = document.getElementById("log-scroll");
+          if (el) el.scrollTop = el.scrollHeight;
+        }
+        // scroll build log to bottom
+        if (state.buildDrawer) {
+          const el = document.getElementById("build-scroll");
+          if (el) el.scrollTop = el.scrollHeight;
+        }
+      }
+
+      // ─── INIT ────────────────────────────────────────────────────────────
+      try {
+        const t = localStorage.getItem("helmsman-theme") || "dark";
+        document.documentElement.setAttribute("data-theme", t);
+        state.theme = t;
+      } catch (e) {}
+      doRender();
+    </script>
+  </body>
+</html>
