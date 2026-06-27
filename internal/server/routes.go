@@ -19,6 +19,7 @@ func (s *Server) routes() http.Handler {
 		api.Get("/system/info", s.handleSystemInfo)
 		api.Get("/metrics", s.handleMetrics)
 		api.Handle("/metrics/stream", sse.NewHandler(2*time.Second))
+		api.Get("/templates", s.handleListTemplates)
 
 		api.Route("/projects", func(r chi.Router) {
 			r.Get("/", s.handleListProjects)

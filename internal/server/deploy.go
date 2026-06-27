@@ -75,25 +75,40 @@ func (s *Server) handleApplicationAction(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// isImageSource reports whether the app deploys a prebuilt image (Docker image
+// or template) rather than building one from a git repository.
+func isImageSource(app store.Application) bool {
+	return app.SourceType == "docker" || app.SourceType == "template"
+}
+
 func (s *Server) deploy(w http.ResponseWriter, app store.Application) {
-	if strings.TrimSpace(app.RepoURL) == "" {
+	if isImageSource(app) {
+		if strings.TrimSpace(app.Image) == "" {
+			writeStatus(w, http.StatusBadRequest, map[string]string{"error": "imaj gerekli"})
+			return
+		}
+	} else if strings.TrimSpace(app.RepoURL) == "" {
 		writeStatus(w, http.StatusBadRequest, map[string]string{"error": "repository URL gerekli"})
 		return
 	}
 
-	token, _ := s.store.ApplicationAuthToken(app.ID)
 	a, err := s.store.SetApplicationStatus(app.ID, store.StatusBuilding)
 	if err != nil {
 		writeError(w, err)
 		return
 	}
-
-	image := store.ImageName(app.ContainerName)
-	gitURL := buildGitURL(app.RepoURL, app.Branch, token)
 	lb := s.newBuildLog(app.ID)
-	fmt.Fprintf(lb, "==> %s imajı %s reposundan derleniyor\n", image, app.RepoURL)
 
-	go s.runDeploy(app, image, gitURL, lb)
+	if isImageSource(app) {
+		fmt.Fprintf(lb, "==> %s imajı çekiliyor\n", app.Image)
+		go s.runImageDeploy(app, app.Image, lb)
+	} else {
+		token, _ := s.store.ApplicationAuthToken(app.ID)
+		image := store.ImageName(app.ContainerName)
+		gitURL := buildGitURL(app.RepoURL, app.Branch, token)
+		fmt.Fprintf(lb, "==> %s imajı %s reposundan derleniyor\n", image, app.RepoURL)
+		go s.runDeploy(app, image, gitURL, lb)
+	}
 
 	writeJSON(w, a)
 }
@@ -104,19 +119,37 @@ func (s *Server) runDeploy(app store.Application, image, gitURL string, lb *buil
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	defer cancel()
 
-	labels := map[string]string{"miso.app": app.ID, "miso.managed": "true"}
-
 	if err := s.docker.Build(ctx, docker.BuildSpec{
 		Image:      image,
 		GitURL:     gitURL,
 		Dockerfile: app.DockerfilePath,
 		BuildArgs:  app.BuildArgs,
-		Labels:     labels,
+		Labels:     deployLabels(app),
 	}, lb); err != nil {
 		s.failDeploy(app.ID, lb, "Derleme başarısız", err)
 		return
 	}
 
+	s.startContainer(ctx, app, image, lb)
+}
+
+// runImageDeploy pulls a prebuilt image then (re)creates and starts the
+// container. It runs detached from the request.
+func (s *Server) runImageDeploy(app store.Application, image string, lb *buildLog) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	defer cancel()
+
+	if err := s.docker.Pull(ctx, image, lb); err != nil {
+		s.failDeploy(app.ID, lb, "İmaj çekilemedi", err)
+		return
+	}
+
+	s.startContainer(ctx, app, image, lb)
+}
+
+// startContainer (re)creates and starts the container for app from image, then
+// records the result in the store. Shared by the git-build and image-pull paths.
+func (s *Server) startContainer(ctx context.Context, app store.Application, image string, lb *buildLog) {
 	fmt.Fprintf(lb, "\n==> %s container'ı başlatılıyor\n", app.ContainerName)
 	cid, err := s.docker.Run(ctx, docker.RunSpec{
 		Image:         image,
@@ -125,7 +158,7 @@ func (s *Server) runDeploy(app store.Application, image, gitURL string, lb *buil
 		ContainerPort: derefPort(app.ContainerPort),
 		RestartPolicy: app.RestartPolicy,
 		Env:           envSlice(app.EnvVars),
-		Labels:        labels,
+		Labels:        deployLabels(app),
 	})
 	if err != nil {
 		s.failDeploy(app.ID, lb, "Container başlatılamadı", err)
@@ -138,6 +171,12 @@ func (s *Server) runDeploy(app store.Application, image, gitURL string, lb *buil
 	if _, err := s.store.MarkApplicationDeployed(app.ID, image, cid); err != nil {
 		log.Printf("deploy: mark deployed %s: %v", app.ID, err)
 	}
+}
+
+// deployLabels are the Docker labels Miso stamps on every container/image it
+// manages so it can later recognize and safely replace them.
+func deployLabels(app store.Application) map[string]string {
+	return map[string]string{"miso.app": app.ID, "miso.managed": "true"}
 }
 
 func (s *Server) failDeploy(appID string, lb *buildLog, stage string, cause error) {

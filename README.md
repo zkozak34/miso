@@ -72,6 +72,7 @@ make build      # web/dist'i derler, internal/server/dist'e gömer, bin/miso ür
 | GET | `/api/system/info` | Host bilgisi (OS, kernel, CPU, RAM, uptime…) |
 | GET | `/api/metrics` | Anlık metrik snapshot'ı |
 | GET | `/api/metrics/stream` | SSE — ~2 sn aralıkla canlı metrik akışı |
+| GET | `/api/templates` | hazır uygulama şablonları kataloğu (PostgreSQL…) |
 
 ### Kaynak yönetimi (Faz 2)
 | Method | Path | Açıklama |
@@ -80,7 +81,7 @@ make build      # web/dist'i derler, internal/server/dist'e gömer, bin/miso ür
 | GET/PATCH/DELETE | `/api/projects/{pid}` | tekil proje |
 | GET/POST | `/api/projects/{pid}/environments` | environment listele / oluştur |
 | GET/DELETE | `/api/environments/{eid}` | tekil environment |
-| GET/POST | `/api/environments/{eid}/applications` | uygulama listele / oluştur |
+| GET/POST | `/api/environments/{eid}/applications` | uygulama listele / oluştur (Git derleme **veya** template/Docker imajı) |
 | GET/PATCH/DELETE | `/api/applications/{aid}` | tekil uygulama (PATCH: port + restart policy; silmede container da kaldırılır) |
 | | | _proje/env silmede de alt container'lar temizlenir_ |
 | PUT | `/api/applications/{aid}/env` | ortam değişkenlerini değiştir (deploy'da container'a uygulanır) |
@@ -107,6 +108,7 @@ internal/
   metrics/           # gopsutil collector + sistem bilgisi
   sse/               # SSE handler
   store/             # SQLite store (projects/environments/applications)
+  templates/         # hazır uygulama şablonları kataloğu (declarative)
   server/            # chi router + CRUD handlers + go:embed SPA
 web/                 # Vite + React SPA
   src/app/           # sidebar layout

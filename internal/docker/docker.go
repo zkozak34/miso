@@ -12,6 +12,7 @@ import (
 	cerrdefs "github.com/containerd/errdefs"
 	"github.com/docker/docker/api/types/build"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )
@@ -111,6 +112,59 @@ func streamBuild(body io.Reader, logw io.Writer) error {
 			} else if msg.Status != "" {
 				fmt.Fprintln(logw, msg.Status)
 			}
+		}
+	}
+}
+
+// Pull fetches a prebuilt image from its registry, streaming human-readable
+// progress to logw. It is used by image-based sources (Docker image, template)
+// that skip the build step entirely.
+func (c *Client) Pull(ctx context.Context, ref string, logw io.Writer) error {
+	rc, err := c.cli.ImagePull(ctx, ref, image.PullOptions{})
+	if err != nil {
+		return err
+	}
+	defer rc.Close()
+	return streamPull(rc, logw)
+}
+
+// streamPull decodes the daemon's JSON pull stream, forwarding status lines to
+// logw and surfacing the first reported error. Per-layer progress is collapsed
+// to one line per status/id so the log stays readable.
+func streamPull(body io.Reader, logw io.Writer) error {
+	dec := json.NewDecoder(body)
+	seen := map[string]string{}
+	for {
+		var msg struct {
+			Status string `json:"status"`
+			ID     string `json:"id"`
+			Error  string `json:"error"`
+		}
+		if err := dec.Decode(&msg); err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+		if msg.Error != "" {
+			if logw != nil {
+				fmt.Fprintln(logw, msg.Error)
+			}
+			return fmt.Errorf("%s", msg.Error)
+		}
+		if logw == nil || msg.Status == "" {
+			continue
+		}
+		// Collapse noisy per-layer progress: only print when the status for a
+		// given layer id changes (e.g. Pulling → Download complete → Pull complete).
+		if msg.ID != "" {
+			if seen[msg.ID] == msg.Status {
+				continue
+			}
+			seen[msg.ID] = msg.Status
+			fmt.Fprintf(logw, "%s: %s\n", msg.ID, msg.Status)
+		} else {
+			fmt.Fprintln(logw, msg.Status)
 		}
 	}
 }

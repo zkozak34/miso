@@ -8,7 +8,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zeynelkozak/miso/internal/store"
+	"github.com/zeynelkozak/miso/internal/templates"
 )
+
+func (s *Server) handleListTemplates(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, templates.Catalog())
+}
 
 func (s *Server) handleListApplications(w http.ResponseWriter, r *http.Request) {
 	eid := chi.URLParam(r, "eid")
@@ -24,22 +29,55 @@ func (s *Server) handleListApplications(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, apps)
 }
 
+// createApplicationRequest is the wire shape for creating an application. It
+// extends the store input with the raw template answers, which the server
+// resolves into a concrete image, ports and env vars before persisting.
+type createApplicationRequest struct {
+	store.ApplicationInput
+	TemplateValues map[string]string `json:"templateValues"`
+}
+
 func (s *Server) handleCreateApplication(w http.ResponseWriter, r *http.Request) {
-	var in store.ApplicationInput
-	if !decodeJSON(w, r, &in) {
+	var req createApplicationRequest
+	if !decodeJSON(w, r, &req) {
 		return
 	}
+	in := req.ApplicationInput
 	if strings.TrimSpace(in.Name) == "" {
 		writeStatus(w, http.StatusBadRequest, map[string]string{"error": "name is required"})
 		return
 	}
 	in.Name = strings.TrimSpace(in.Name)
+
+	// A template source is configured by answers, not raw image/env: resolve it
+	// here so the catalog stays the single source of truth for image and ports.
+	if in.SourceType == "template" {
+		res, err := templates.Resolve(in.TemplateID, req.TemplateValues)
+		if err != nil {
+			writeStatus(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return
+		}
+		in.Image = res.Image
+		in.HostPort = res.HostPort
+		in.ContainerPort = res.ContainerPort
+		in.EnvVars = toStoreEnv(res.Env)
+	}
+
 	a, err := s.store.CreateApplication(chi.URLParam(r, "eid"), in)
 	if err != nil {
 		writeError(w, err)
 		return
 	}
 	writeStatus(w, http.StatusCreated, a)
+}
+
+// toStoreEnv converts resolved template env vars into the store's type.
+func toStoreEnv(in []templates.EnvVar) []store.EnvVar {
+	out := make([]store.EnvVar, 0, len(in))
+	for _, v := range in {
+		out = append(out, store.EnvVar{Key: v.Key, Value: v.Value, Secret: v.Secret})
+	}
+	return out
 }
 
 func (s *Server) handleGetApplication(w http.ResponseWriter, r *http.Request) {

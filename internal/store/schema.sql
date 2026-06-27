@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS applications (
     environment_id  TEXT NOT NULL REFERENCES environments(id) ON DELETE CASCADE,
     name            TEXT NOT NULL,
     source_type     TEXT NOT NULL DEFAULT 'git',
+    template_id     TEXT NOT NULL DEFAULT '',
     repo_url        TEXT NOT NULL DEFAULT '',
     branch          TEXT NOT NULL DEFAULT 'main',
     dockerfile_path TEXT NOT NULL DEFAULT 'Dockerfile',

@@ -49,6 +49,7 @@ type Application struct {
 	EnvironmentID  string            `json:"environmentId"`
 	Name           string            `json:"name"`
 	SourceType     string            `json:"sourceType"`
+	TemplateID     string            `json:"templateId,omitempty"`
 	RepoURL        string            `json:"repoUrl"`
 	Branch         string            `json:"branch"`
 	DockerfilePath string            `json:"dockerfilePath"`
@@ -81,6 +82,7 @@ type EnvVar struct {
 type ApplicationInput struct {
 	Name           string            `json:"name"`
 	SourceType     string            `json:"sourceType"`
+	TemplateID     string            `json:"templateId"`
 	RepoURL        string            `json:"repoUrl"`
 	Branch         string            `json:"branch"`
 	DockerfilePath string            `json:"dockerfilePath"`
@@ -89,6 +91,7 @@ type ApplicationInput struct {
 	Image          string            `json:"image"`
 	HostPort       *int              `json:"hostPort"`
 	ContainerPort  *int              `json:"containerPort"`
+	EnvVars        []EnvVar          `json:"envVars"`
 }
 
 // ApplicationSettings holds the runtime fields editable from the detail page's

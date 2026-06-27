@@ -67,6 +67,7 @@ func migrate(db *sql.DB) error {
 		{"last_error", `ALTER TABLE applications ADD COLUMN last_error TEXT NOT NULL DEFAULT ''`},
 		{"restart_policy", `ALTER TABLE applications ADD COLUMN restart_policy TEXT NOT NULL DEFAULT 'unless-stopped'`},
 		{"env_vars", `ALTER TABLE applications ADD COLUMN env_vars TEXT NOT NULL DEFAULT '[]'`},
+		{"template_id", `ALTER TABLE applications ADD COLUMN template_id TEXT NOT NULL DEFAULT ''`},
 	}
 	for _, a := range add {
 		if cols[a.name] {
@@ -215,7 +216,7 @@ func (s *Store) DeleteEnvironment(id string) error { return s.deleteByID("enviro
 
 func (s *Store) ListApplications(envID string) ([]Application, error) {
 	const q = `
-		SELECT id, environment_id, name, source_type, repo_url, branch, dockerfile_path,
+		SELECT id, environment_id, name, source_type, template_id, repo_url, branch, dockerfile_path,
 		  build_args, (auth_token != ''), image, host_port, container_port, container_id, last_error, restart_policy, env_vars, status, created_at, updated_at
 		FROM applications WHERE environment_id = ? ORDER BY created_at ASC`
 	rows, err := s.db.Query(q, envID)
@@ -236,7 +237,7 @@ func (s *Store) ListApplications(envID string) ([]Application, error) {
 
 func (s *Store) GetApplication(id string) (Application, error) {
 	const q = `
-		SELECT a.id, a.environment_id, a.name, a.source_type, a.repo_url, a.branch, a.dockerfile_path,
+		SELECT a.id, a.environment_id, a.name, a.source_type, a.template_id, a.repo_url, a.branch, a.dockerfile_path,
 		  a.build_args, (a.auth_token != ''), a.image, a.host_port, a.container_port, a.container_id, a.last_error, a.restart_policy, a.env_vars, a.status, a.created_at, a.updated_at,
 		  e.project_id, p.name, e.name
 		FROM applications a
@@ -247,7 +248,7 @@ func (s *Store) GetApplication(id string) (Application, error) {
 	var a Application
 	var buildArgs, envVars string
 	var hasToken bool
-	if err := row.Scan(&a.ID, &a.EnvironmentID, &a.Name, &a.SourceType, &a.RepoURL, &a.Branch, &a.DockerfilePath,
+	if err := row.Scan(&a.ID, &a.EnvironmentID, &a.Name, &a.SourceType, &a.TemplateID, &a.RepoURL, &a.Branch, &a.DockerfilePath,
 		&buildArgs, &hasToken, &a.Image, &a.HostPort, &a.ContainerPort, &a.ContainerID, &a.LastError, &a.RestartPolicy, &envVars, &a.Status, &a.CreatedAt, &a.UpdatedAt,
 		&a.ProjectID, &a.ProjectName, &a.EnvironmentNm); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -281,12 +282,13 @@ func (s *Store) CreateApplication(envID string, in ApplicationInput) (Applicatio
 		dockerfile = "Dockerfile"
 	}
 	args, _ := json.Marshal(normalizeArgs(in.BuildArgs))
+	envVars, _ := json.Marshal(normalizeEnvVars(in.EnvVars))
 	if _, err := s.db.Exec(`
-		INSERT INTO applications (id, environment_id, name, source_type, repo_url, branch, dockerfile_path,
-		  build_args, auth_token, image, host_port, container_port, status, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		id, envID, in.Name, source, in.RepoURL, branch, dockerfile, string(args), in.AuthToken, in.Image,
-		in.HostPort, in.ContainerPort, StatusStopped, ts, ts); err != nil {
+		INSERT INTO applications (id, environment_id, name, source_type, template_id, repo_url, branch, dockerfile_path,
+		  build_args, auth_token, image, host_port, container_port, env_vars, status, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		id, envID, in.Name, source, in.TemplateID, in.RepoURL, branch, dockerfile, string(args), in.AuthToken, in.Image,
+		in.HostPort, in.ContainerPort, string(envVars), StatusStopped, ts, ts); err != nil {
 		return Application{}, err
 	}
 	return s.GetApplication(id)
@@ -391,7 +393,7 @@ func scanApplication(rows *sql.Rows) (Application, error) {
 	var a Application
 	var buildArgs, envVars string
 	var hasToken bool
-	if err := rows.Scan(&a.ID, &a.EnvironmentID, &a.Name, &a.SourceType, &a.RepoURL, &a.Branch, &a.DockerfilePath,
+	if err := rows.Scan(&a.ID, &a.EnvironmentID, &a.Name, &a.SourceType, &a.TemplateID, &a.RepoURL, &a.Branch, &a.DockerfilePath,
 		&buildArgs, &hasToken, &a.Image, &a.HostPort, &a.ContainerPort, &a.ContainerID, &a.LastError, &a.RestartPolicy, &envVars, &a.Status, &a.CreatedAt, &a.UpdatedAt); err != nil {
 		return Application{}, err
 	}

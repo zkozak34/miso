@@ -68,6 +68,36 @@ export interface CreateApplicationInput {
   image?: string
   hostPort?: number | null
   containerPort?: number | null
+  templateId?: string
+  templateValues?: Record<string, string>
+}
+
+export type TemplateFieldType = "text" | "password" | "select" | "port"
+export type TemplateFieldRole = "" | "version" | "hostPort"
+
+export interface TemplateField {
+  key: string
+  label: string
+  type: TemplateFieldType
+  role?: TemplateFieldRole
+  envKey?: string
+  secret?: boolean
+  default?: string
+  options?: string[]
+  required?: boolean
+  help?: string
+}
+
+export interface Template {
+  id: string
+  name: string
+  description: string
+  icon: string
+  color: string
+  image: string
+  containerPort: number
+  volumes: string[]
+  fields: TemplateField[]
 }
 
 export interface UpdateApplicationInput {
@@ -100,6 +130,8 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   if (res.status === 204) return undefined as T
   return res.json()
 }
+
+export const listTemplates = () => request<Template[]>("/api/templates")
 
 export const listProjects = () => request<Project[]>("/api/projects")
 export const getProject = (id: string) => request<Project>(`/api/projects/${id}`)

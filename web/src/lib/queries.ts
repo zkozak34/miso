@@ -18,6 +18,7 @@ import {
   listApplications,
   listEnvironments,
   listProjects,
+  listTemplates,
   type UpdateApplicationInput,
   updateApplication,
   updateApplicationEnv,
@@ -38,6 +39,10 @@ export function useSystemInfo() {
     queryFn: () => fetchSystemInfo(),
     staleTime: 60_000,
   })
+}
+
+export function useTemplates() {
+  return useQuery({ queryKey: ["templates"], queryFn: listTemplates, staleTime: Infinity })
 }
 
 export function useProjects() {
