@@ -38,6 +38,8 @@ func (s *Server) routes() http.Handler {
 		api.Route("/applications/{aid}", func(r chi.Router) {
 			r.Get("/", s.handleGetApplication)
 			r.Delete("/", s.handleDeleteApplication)
+			r.Get("/logs", s.handleApplicationLogs)
+			r.Get("/stats", s.handleApplicationStats)
 			r.Post("/{action}", s.handleApplicationAction)
 		})
 	})

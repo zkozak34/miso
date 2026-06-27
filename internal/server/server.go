@@ -3,10 +3,12 @@ package server
 import (
 	"context"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/zeynelkozak/miso/internal/docker"
 	"github.com/zeynelkozak/miso/internal/store"
 )
 
@@ -14,16 +16,26 @@ type Server struct {
 	router chi.Router
 	addr   string
 	store  *store.Store
+	docker *docker.Client // nil when the daemon is unreachable
+
+	mu        sync.Mutex
+	buildLogs map[string]*buildLog
 }
 
-func New(addr string, st *store.Store) *Server {
+func New(addr string, st *store.Store, dk *docker.Client) *Server {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Compress(5))
 
-	return &Server{router: r, addr: addr, store: st}
+	return &Server{
+		router:    r,
+		addr:      addr,
+		store:     st,
+		docker:    dk,
+		buildLogs: map[string]*buildLog{},
+	}
 }
 
 func (s *Server) ListenAndServe(ctx context.Context) error {

@@ -6,10 +6,15 @@ servis eder.
 
 > **Faz 1:** Sistem kaynak dashboard'u — CPU, RAM, disk, network canlı metrikleri (SSE) + sistem bilgisi.
 >
-> **Faz 2 (mevcut):** Proje → Environment → Uygulama yönetimi. Projeler oluştur, environment'lara
+> **Faz 2:** Proje → Environment → Uygulama yönetimi. Projeler oluştur, environment'lara
 > (production/staging…) böl, environment'lara Git üzerinden uygulama ekle, uygulama detayını gör.
-> Veriler SQLite'ta kalıcı. _Gerçek Docker bağlantısı Faz 3'te_ — bu fazda uygulama durumları
-> saklanan alanlar, detay metrikleri mock, Stop/Restart/Deploy butonları durumu değiştiren stub'lar.
+> Veriler SQLite'ta kalıcı.
+>
+> **Faz 3 (mevcut):** Gerçek Docker entegrasyonu (resmi Docker Go SDK). **Deploy** Git reposunu
+> uzak build context olarak derler ve container'ı çalıştırır; **Stop/Restart** gerçek container'ı
+> yönetir. Container/imaj adı `projectName-env-appName` deseniyle üretilir. Detay sayfası canlı
+> CPU/bellek/ağ istatistiklerini ve container loglarını gösterir; build sırasında durum `building`
+> olur, başarısızlıkta hata mesajı yüzeye çıkar. Container portu forma eklenen alanlarla publish edilir.
 
 ## Teknolojiler
 
@@ -76,8 +81,10 @@ make build      # web/dist'i derler, internal/server/dist'e gömer, bin/miso ür
 | GET/POST | `/api/projects/{pid}/environments` | environment listele / oluştur |
 | GET/DELETE | `/api/environments/{eid}` | tekil environment |
 | GET/POST | `/api/environments/{eid}/applications` | uygulama listele / oluştur |
-| GET/DELETE | `/api/applications/{aid}` | tekil uygulama |
-| POST | `/api/applications/{aid}/{deploy\|stop\|restart}` | durum aksiyonu (Faz 2'de stub) |
+| GET/DELETE | `/api/applications/{aid}` | tekil uygulama (silmede container da kaldırılır) |
+| POST | `/api/applications/{aid}/{deploy\|stop\|restart}` | gerçek Docker aksiyonu |
+| GET | `/api/applications/{aid}/logs` | container (veya derleme) logları |
+| GET | `/api/applications/{aid}/stats` | canlı CPU/bellek/ağ istatistiği |
 
 ## Komutlar
 

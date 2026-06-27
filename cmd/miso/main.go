@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/zeynelkozak/miso/internal/docker"
 	"github.com/zeynelkozak/miso/internal/server"
 	"github.com/zeynelkozak/miso/internal/store"
 )
@@ -25,8 +26,16 @@ func main() {
 	}
 	defer st.Close()
 
+	dk, err := docker.New(ctx)
+	if err != nil {
+		log.Printf("docker daemon unavailable, deploy actions disabled: %v", err)
+		dk = nil
+	} else {
+		defer dk.Close()
+	}
+
 	log.Printf("miso listening on %s (db: %s)", *addr, *dbPath)
-	if err := server.New(*addr, st).ListenAndServe(ctx); err != nil {
+	if err := server.New(*addr, st, dk).ListenAndServe(ctx); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 }

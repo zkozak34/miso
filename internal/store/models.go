@@ -57,6 +57,8 @@ type Application struct {
 	Image          string            `json:"image"`
 	HostPort       *int              `json:"hostPort"`
 	ContainerPort  *int              `json:"containerPort"`
+	ContainerID    string            `json:"containerId,omitempty"`
+	LastError      string            `json:"lastError,omitempty"`
 	Status         string            `json:"status"`
 	ProjectID      string            `json:"projectId,omitempty"`
 	ProjectName    string            `json:"projectName,omitempty"`
@@ -75,4 +77,6 @@ type ApplicationInput struct {
 	BuildArgs      map[string]string `json:"buildArgs"`
 	AuthToken      string            `json:"authToken"`
 	Image          string            `json:"image"`
+	HostPort       *int              `json:"hostPort"`
+	ContainerPort  *int              `json:"containerPort"`
 }

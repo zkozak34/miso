@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -33,7 +34,47 @@ func Open(path string) (*Store, error) {
 		_ = db.Close()
 		return nil, fmt.Errorf("apply schema: %w", err)
 	}
+	if err := migrate(db); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("migrate: %w", err)
+	}
 	return &Store{db: db}, nil
+}
+
+// migrate adds columns introduced after the initial schema so databases
+// created by earlier versions keep working.
+func migrate(db *sql.DB) error {
+	cols := map[string]bool{}
+	rows, err := db.Query(`PRAGMA table_info(applications)`)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notnull, pk int
+		var dflt sql.NullString
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			rows.Close()
+			return err
+		}
+		cols[name] = true
+	}
+	rows.Close()
+
+	add := []struct{ name, ddl string }{
+		{"container_id", `ALTER TABLE applications ADD COLUMN container_id TEXT NOT NULL DEFAULT ''`},
+		{"last_error", `ALTER TABLE applications ADD COLUMN last_error TEXT NOT NULL DEFAULT ''`},
+	}
+	for _, a := range add {
+		if cols[a.name] {
+			continue
+		}
+		if _, err := db.Exec(a.ddl); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Store) Close() error { return s.db.Close() }
@@ -173,7 +214,7 @@ func (s *Store) DeleteEnvironment(id string) error { return s.deleteByID("enviro
 func (s *Store) ListApplications(envID string) ([]Application, error) {
 	const q = `
 		SELECT id, environment_id, name, source_type, repo_url, branch, dockerfile_path,
-		  build_args, (auth_token != ''), image, host_port, container_port, status, created_at, updated_at
+		  build_args, (auth_token != ''), image, host_port, container_port, container_id, last_error, status, created_at, updated_at
 		FROM applications WHERE environment_id = ? ORDER BY created_at ASC`
 	rows, err := s.db.Query(q, envID)
 	if err != nil {
@@ -194,7 +235,7 @@ func (s *Store) ListApplications(envID string) ([]Application, error) {
 func (s *Store) GetApplication(id string) (Application, error) {
 	const q = `
 		SELECT a.id, a.environment_id, a.name, a.source_type, a.repo_url, a.branch, a.dockerfile_path,
-		  a.build_args, (a.auth_token != ''), a.image, a.host_port, a.container_port, a.status, a.created_at, a.updated_at,
+		  a.build_args, (a.auth_token != ''), a.image, a.host_port, a.container_port, a.container_id, a.last_error, a.status, a.created_at, a.updated_at,
 		  e.project_id, p.name, e.name
 		FROM applications a
 		JOIN environments e ON a.environment_id = e.id
@@ -205,7 +246,7 @@ func (s *Store) GetApplication(id string) (Application, error) {
 	var buildArgs string
 	var hasToken bool
 	if err := row.Scan(&a.ID, &a.EnvironmentID, &a.Name, &a.SourceType, &a.RepoURL, &a.Branch, &a.DockerfilePath,
-		&buildArgs, &hasToken, &a.Image, &a.HostPort, &a.ContainerPort, &a.Status, &a.CreatedAt, &a.UpdatedAt,
+		&buildArgs, &hasToken, &a.Image, &a.HostPort, &a.ContainerPort, &a.ContainerID, &a.LastError, &a.Status, &a.CreatedAt, &a.UpdatedAt,
 		&a.ProjectID, &a.ProjectName, &a.EnvironmentNm); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Application{}, ErrNotFound
@@ -214,7 +255,7 @@ func (s *Store) GetApplication(id string) (Application, error) {
 	}
 	a.BuildArgs = decodeBuildArgs(buildArgs)
 	a.HasAuthToken = hasToken
-	a.ContainerName = containerName(a.ProjectName, a.EnvironmentNm, a.Name)
+	a.ContainerName = ContainerName(a.ProjectName, a.EnvironmentNm, a.Name)
 	return a, nil
 }
 
@@ -239,16 +280,50 @@ func (s *Store) CreateApplication(envID string, in ApplicationInput) (Applicatio
 	args, _ := json.Marshal(normalizeArgs(in.BuildArgs))
 	if _, err := s.db.Exec(`
 		INSERT INTO applications (id, environment_id, name, source_type, repo_url, branch, dockerfile_path,
-		  build_args, auth_token, image, status, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		id, envID, in.Name, source, in.RepoURL, branch, dockerfile, string(args), in.AuthToken, in.Image, StatusStopped, ts, ts); err != nil {
+		  build_args, auth_token, image, host_port, container_port, status, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		id, envID, in.Name, source, in.RepoURL, branch, dockerfile, string(args), in.AuthToken, in.Image,
+		in.HostPort, in.ContainerPort, StatusStopped, ts, ts); err != nil {
 		return Application{}, err
 	}
 	return s.GetApplication(id)
 }
 
+// ApplicationAuthToken returns the raw (unmasked) auth token for build use.
+func (s *Store) ApplicationAuthToken(id string) (string, error) {
+	var token string
+	err := s.db.QueryRow(`SELECT auth_token FROM applications WHERE id = ?`, id).Scan(&token)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	return token, err
+}
+
+// MarkApplicationDeployed records a successful deploy: running status, built
+// image, container id and a cleared error.
+func (s *Store) MarkApplicationDeployed(id, image, containerID string) (Application, error) {
+	res, err := s.db.Exec(
+		`UPDATE applications SET status = ?, image = ?, container_id = ?, last_error = '', updated_at = ? WHERE id = ?`,
+		StatusRunning, image, containerID, now(), id)
+	if err != nil {
+		return Application{}, err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return Application{}, ErrNotFound
+	}
+	return s.GetApplication(id)
+}
+
+// MarkApplicationFailed records a failed build/deploy with the error message.
+func (s *Store) MarkApplicationFailed(id, lastError string) error {
+	_, err := s.db.Exec(
+		`UPDATE applications SET status = ?, last_error = ?, updated_at = ? WHERE id = ?`,
+		StatusFailed, lastError, now(), id)
+	return err
+}
+
 func (s *Store) SetApplicationStatus(id, status string) (Application, error) {
-	res, err := s.db.Exec(`UPDATE applications SET status = ?, updated_at = ? WHERE id = ?`, status, now(), id)
+	res, err := s.db.Exec(`UPDATE applications SET status = ?, last_error = '', updated_at = ? WHERE id = ?`, status, now(), id)
 	if err != nil {
 		return Application{}, err
 	}
@@ -276,7 +351,7 @@ func scanApplication(rows *sql.Rows) (Application, error) {
 	var buildArgs string
 	var hasToken bool
 	if err := rows.Scan(&a.ID, &a.EnvironmentID, &a.Name, &a.SourceType, &a.RepoURL, &a.Branch, &a.DockerfilePath,
-		&buildArgs, &hasToken, &a.Image, &a.HostPort, &a.ContainerPort, &a.Status, &a.CreatedAt, &a.UpdatedAt); err != nil {
+		&buildArgs, &hasToken, &a.Image, &a.HostPort, &a.ContainerPort, &a.ContainerID, &a.LastError, &a.Status, &a.CreatedAt, &a.UpdatedAt); err != nil {
 		return Application{}, err
 	}
 	a.BuildArgs = decodeBuildArgs(buildArgs)
@@ -303,9 +378,32 @@ func normalizeArgs(in map[string]string) map[string]string {
 	return out
 }
 
-func containerName(project, env, app string) string {
-	slug := func(s string) string {
-		return strings.ToLower(strings.ReplaceAll(strings.TrimSpace(s), " ", "-"))
+var nonDockerName = regexp.MustCompile(`[^a-z0-9]+`)
+
+// dockerSlug lowercases a segment and replaces any run of characters that are
+// invalid in a Docker name with a single dash, trimming leading/trailing dashes.
+func dockerSlug(s string) string {
+	s = nonDockerName.ReplaceAllString(strings.ToLower(strings.TrimSpace(s)), "-")
+	return strings.Trim(s, "-")
+}
+
+// ContainerName builds the Docker container name as projectName-env-appName,
+// sanitized to the Docker name grammar ([a-z0-9][a-z0-9_.-]*).
+func ContainerName(project, env, app string) string {
+	parts := make([]string, 0, 3)
+	for _, p := range []string{project, env, app} {
+		if v := dockerSlug(p); v != "" {
+			parts = append(parts, v)
+		}
 	}
-	return fmt.Sprintf("%s-%s-%s", slug(project), slug(env), slug(app))
+	name := strings.Join(parts, "-")
+	if name == "" {
+		name = "app"
+	}
+	return name
+}
+
+// ImageName derives the local image tag for a container name.
+func ImageName(containerName string) string {
+	return "miso/" + containerName + ":latest"
 }

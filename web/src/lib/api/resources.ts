@@ -37,6 +37,7 @@ export interface Application {
   image: string
   hostPort: number | null
   containerPort: number | null
+  lastError?: string
   status: ResourceStatus
   projectId?: string
   projectName?: string
@@ -55,6 +56,16 @@ export interface CreateApplicationInput {
   buildArgs: Record<string, string>
   authToken: string
   image?: string
+  hostPort?: number | null
+  containerPort?: number | null
+}
+
+export interface AppStats {
+  cpuPercent: number
+  memoryUsage: number
+  memoryLimit: number
+  netRxBytes: number
+  netTxBytes: number
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
@@ -104,3 +115,7 @@ export const deleteApplication = (id: string) =>
   request<void>(`/api/applications/${id}`, { method: "DELETE" })
 export const applicationAction = (id: string, action: "deploy" | "stop" | "restart") =>
   request<Application>(`/api/applications/${id}/${action}`, { method: "POST" })
+export const getApplicationStats = (id: string) =>
+  request<AppStats>(`/api/applications/${id}/stats`)
+export const getApplicationLogs = (id: string) =>
+  request<{ logs: string }>(`/api/applications/${id}/logs`)

@@ -1,10 +1,29 @@
-import { Cpu, MemoryStick, Network, Play, RotateCw, Square } from "lucide-react"
-import { useMemo } from "react"
-import { Link, useParams } from "react-router-dom"
+import {
+  AlertTriangle,
+  Cpu,
+  MemoryStick,
+  Network,
+  Play,
+  RotateCw,
+  Square,
+  Trash2,
+} from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { UsageAreaChart } from "@/components/dashboard/usage-area-chart"
 import { StatusBadge } from "@/components/status-badge"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import {
   Breadcrumb,
@@ -18,13 +37,24 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useMockMetrics } from "@/hooks/use-mock-metrics"
+import { formatBytes } from "@/lib/api"
 import type { Application } from "@/lib/api/resources"
-import { useApplication, useApplicationAction } from "@/lib/queries"
+import {
+  useApplication,
+  useApplicationAction,
+  useApplicationLogs,
+  useApplicationStats,
+  useDeleteApplication,
+} from "@/lib/queries"
 
 export function ApplicationPage() {
   const { projectId = "", envId = "", appId = "" } = useParams()
-  const { data: app, isLoading } = useApplication(appId)
+  const navigate = useNavigate()
+  const { data: app, isLoading, isError } = useApplication(appId)
+
+  useEffect(() => {
+    if (isError) navigate(`/projects/${projectId}/environments/${envId}`, { replace: true })
+  }, [isError, navigate, projectId, envId])
 
   if (isLoading || !app) {
     return (
@@ -74,6 +104,18 @@ export function ApplicationPage() {
 
       <Header app={app} />
 
+      {app.status === "failed" && app.lastError && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+          <div className="min-w-0">
+            <p className="font-medium text-destructive">Son dağıtım başarısız oldu</p>
+            <p className="mt-0.5 break-words font-mono text-xs text-muted-foreground">
+              {app.lastError}
+            </p>
+          </div>
+        </div>
+      )}
+
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -87,7 +129,7 @@ export function ApplicationPage() {
           <Overview app={app} />
         </TabsContent>
         <TabsContent value="logs" className="mt-6">
-          <Placeholder title="Loglar" />
+          <Logs app={app} />
         </TabsContent>
         <TabsContent value="environment" className="mt-6">
           <Placeholder title="Ortam değişkenleri" />
@@ -104,7 +146,10 @@ export function ApplicationPage() {
 }
 
 function Header({ app }: { app: Application }) {
+  const navigate = useNavigate()
   const action = useApplicationAction(app.id)
+  const del = useDeleteApplication(app.environmentId)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const run = (a: "deploy" | "stop" | "restart", label: string) =>
     action.mutate(a, {
       onSuccess: () => toast.success(label),
@@ -141,45 +186,116 @@ function Header({ app }: { app: Application }) {
         <Button disabled={action.isPending} onClick={() => run("deploy", "Dağıtım başlatıldı")}>
           <Play className="h-4 w-4" /> Deploy
         </Button>
+        <Button
+          variant="outline"
+          className="text-destructive hover:text-destructive"
+          disabled={del.isPending}
+          onClick={() => setConfirmOpen(true)}
+        >
+          <Trash2 className="h-4 w-4" /> Sil
+        </Button>
       </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Uygulamayı sil?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-mono">{app.name}</span> ve çalışan container'ı kalıcı olarak
+              silinecek. Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                del.mutate(app.id, {
+                  onSuccess: () => {
+                    toast.success("Uygulama silindi")
+                    navigate(`/projects/${app.projectId}/environments/${app.environmentId}`, {
+                      replace: true,
+                    })
+                  },
+                  onError: (e) => toast.error(e.message),
+                })
+              }
+            >
+              Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
 
+// useStatsHistory polls live container stats and keeps a rolling window for the
+// charts. The window resets whenever the container stops running.
+function useStatsHistory(appId: string, running: boolean) {
+  const { data } = useApplicationStats(appId, running)
+  const [history, setHistory] = useState<{ cpu: number; mem: number }[]>([])
+
+  useEffect(() => {
+    if (!running) setHistory([])
+  }, [running])
+
+  useEffect(() => {
+    if (!data || !running) return
+    setHistory((h) => [...h.slice(-39), { cpu: data.cpuPercent, mem: data.memoryUsage }])
+  }, [data, running])
+
+  return { latest: data, history }
+}
+
+const MB = 1024 * 1024
+
 function Overview({ app }: { app: Application }) {
   const running = app.status === "running"
-  const { latest, history } = useMockMetrics(running)
+  const { latest, history } = useStatsHistory(app.id, running)
 
   const cpuData = useMemo(() => history.map((p) => ({ cpu: Number(p.cpu.toFixed(1)) })), [history])
-  const memData = useMemo(() => history.map((p) => ({ memory: Math.round(p.memory) })), [history])
+  const memData = useMemo(() => history.map((p) => ({ memory: Math.round(p.mem / MB) })), [history])
 
-  const ports = app.hostPort && app.containerPort ? `${app.hostPort}:${app.containerPort}` : "—"
+  const cpu = latest?.cpuPercent ?? 0
+  const memUsageMB = latest ? latest.memoryUsage / MB : 0
+  const memLimitMB = latest?.memoryLimit ? latest.memoryLimit / MB : 0
+  const ports =
+    app.hostPort && app.containerPort
+      ? `${app.hostPort}:${app.containerPort}`
+      : app.containerPort
+        ? `:${app.containerPort}`
+        : "—"
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <div className="space-y-4 lg:col-span-2">
+        {!running && (
+          <p className="rounded-lg border border-dashed px-4 py-3 text-xs text-muted-foreground">
+            Canlı metrikler yalnızca container çalışırken görüntülenir.
+          </p>
+        )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatCard
             title="CPU"
             icon={Cpu}
             accent="var(--chart-1)"
-            value={`${latest.cpu.toFixed(1)}%`}
-            percent={latest.cpu}
+            value={`${cpu.toFixed(1)}%`}
+            percent={cpu}
           />
           <StatCard
             title="Bellek"
             icon={MemoryStick}
             accent="var(--chart-2)"
-            value={`${Math.round(latest.memory)} MB`}
-            subtitle="/ 512 MB"
-            percent={(latest.memory / 512) * 100}
+            value={`${Math.round(memUsageMB)} MB`}
+            subtitle={memLimitMB ? `/ ${Math.round(memLimitMB)} MB` : undefined}
+            percent={memLimitMB ? (memUsageMB / memLimitMB) * 100 : 0}
           />
           <StatCard
             title="Ağ"
             icon={Network}
             accent="var(--chart-3)"
-            value={`${Math.round(latest.netIn)} KB/s`}
-            subtitle="↓ gelen"
+            value={formatBytes(latest?.netRxBytes ?? 0)}
+            subtitle="↓ toplam"
           />
         </div>
 
@@ -232,6 +348,22 @@ function Overview({ app }: { app: Application }) {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+function Logs({ app }: { app: Application }) {
+  const poll = app.status === "running" || app.status === "building"
+  const { data, isLoading } = useApplicationLogs(app.id, poll)
+  const logs = data?.logs?.trimEnd() ?? ""
+
+  return (
+    <Card>
+      <CardContent className="p-0">
+        <pre className="max-h-[480px] overflow-auto whitespace-pre-wrap p-4 font-mono text-xs leading-relaxed">
+          {logs || (isLoading ? "Yükleniyor…" : "Henüz log yok. Uygulamayı dağıtın.")}
+        </pre>
+      </CardContent>
+    </Card>
   )
 }
 

@@ -1,10 +1,13 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/zeynelkozak/miso/internal/store"
 )
 
 type environmentInput struct {
@@ -12,7 +15,12 @@ type environmentInput struct {
 }
 
 func (s *Server) handleListEnvironments(w http.ResponseWriter, r *http.Request) {
-	envs, err := s.store.ListEnvironments(chi.URLParam(r, "pid"))
+	pid := chi.URLParam(r, "pid")
+	if _, err := s.store.GetProject(pid); err != nil {
+		writeError(w, err)
+		return
+	}
+	envs, err := s.store.ListEnvironments(pid)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -47,7 +55,19 @@ func (s *Server) handleGetEnvironment(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDeleteEnvironment(w http.ResponseWriter, r *http.Request) {
-	if err := s.store.DeleteEnvironment(chi.URLParam(r, "eid")); err != nil {
+	eid := chi.URLParam(r, "eid")
+	if s.docker != nil {
+		if env, err := s.store.GetEnvironment(eid); err == nil {
+			if apps, err := s.store.ListApplications(eid); err == nil {
+				ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+				for _, a := range apps {
+					_ = s.docker.Remove(ctx, store.ContainerName(env.ProjectName, env.Name, a.Name))
+				}
+				cancel()
+			}
+		}
+	}
+	if err := s.store.DeleteEnvironment(eid); err != nil {
 		writeError(w, err)
 		return
 	}

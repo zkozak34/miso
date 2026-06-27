@@ -1,5 +1,5 @@
 import { Plus, Trash2 } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import {
@@ -30,11 +30,15 @@ import { useDeleteProject, useEnvironments, useProject } from "@/lib/queries"
 export function ProjectPage() {
   const { projectId = "" } = useParams()
   const navigate = useNavigate()
-  const { data: project } = useProject(projectId)
+  const { data: project, isError } = useProject(projectId)
   const { data: environments, isLoading } = useEnvironments(projectId)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const del = useDeleteProject()
+
+  useEffect(() => {
+    if (isError) navigate("/projects", { replace: true })
+  }, [isError, navigate])
 
   return (
     <div className="space-y-6">
@@ -105,7 +109,7 @@ export function ProjectPage() {
                 del.mutate(projectId, {
                   onSuccess: () => {
                     toast.success("Proje silindi")
-                    navigate("/projects")
+                    navigate("/projects", { replace: true })
                   },
                   onError: (e) => toast.error(e.message),
                 })

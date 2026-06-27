@@ -23,6 +23,14 @@ const schema = z.object({
   repoUrl: z.string().trim().min(1, "Repo URL zorunlu"),
   branch: z.string().trim().min(1),
   dockerfilePath: z.string().trim().min(1),
+  containerPort: z
+    .string()
+    .optional()
+    .refine((v) => !v || /^\d+$/.test(v), "Sayı girin"),
+  hostPort: z
+    .string()
+    .optional()
+    .refine((v) => !v || /^\d+$/.test(v), "Sayı girin"),
   buildArgs: z.array(z.object({ key: z.string(), value: z.string() })),
   authToken: z.string().optional(),
 })
@@ -47,6 +55,8 @@ export function AddApplicationDialog({
       repoUrl: "",
       branch: "main",
       dockerfilePath: "Dockerfile",
+      containerPort: "",
+      hostPort: "",
       buildArgs: [],
       authToken: "",
     },
@@ -67,6 +77,8 @@ export function AddApplicationDialog({
         dockerfilePath: values.dockerfilePath,
         buildArgs,
         authToken: values.authToken ?? "",
+        containerPort: values.containerPort ? Number(values.containerPort) : null,
+        hostPort: values.hostPort ? Number(values.hostPort) : null,
       },
       {
         onSuccess: () => {
@@ -126,6 +138,40 @@ export function AddApplicationDialog({
                 <div className="space-y-2">
                   <Label htmlFor="dockerfile">Dockerfile yolu</Label>
                   <Input id="dockerfile" {...form.register("dockerfilePath")} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="container-port">Container port</Label>
+                  <Input
+                    id="container-port"
+                    inputMode="numeric"
+                    placeholder="3000"
+                    {...form.register("containerPort")}
+                  />
+                  {form.formState.errors.containerPort && (
+                    <p className="text-xs text-destructive">
+                      {form.formState.errors.containerPort.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="host-port">Host port</Label>
+                    <span className="text-xs text-muted-foreground">opsiyonel</span>
+                  </div>
+                  <Input
+                    id="host-port"
+                    inputMode="numeric"
+                    placeholder="otomatik"
+                    {...form.register("hostPort")}
+                  />
+                  {form.formState.errors.hostPort && (
+                    <p className="text-xs text-destructive">
+                      {form.formState.errors.hostPort.message}
+                    </p>
+                  )}
                 </div>
               </div>
 

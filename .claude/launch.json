@@ -6,6 +6,12 @@
       "runtimeExecutable": "./bin/miso",
       "runtimeArgs": ["--addr", ":8080"],
       "port": 8080
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd web && yarn dev --port 5174 --strictPort"],
+      "port": 5174
     }
   ]
 }

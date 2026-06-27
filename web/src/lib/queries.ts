@@ -10,6 +10,8 @@ import {
   deleteEnvironment,
   deleteProject,
   getApplication,
+  getApplicationLogs,
+  getApplicationStats,
   getEnvironment,
   getProject,
   listApplications,
@@ -39,7 +41,12 @@ export function useProjects() {
 }
 
 export function useProject(id: string) {
-  return useQuery({ queryKey: keys.project(id), queryFn: () => getProject(id), enabled: !!id })
+  return useQuery({
+    queryKey: keys.project(id),
+    queryFn: () => getProject(id),
+    enabled: !!id,
+    retry: false,
+  })
 }
 
 export function useCreateProject() {
@@ -54,7 +61,11 @@ export function useDeleteProject() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: deleteProject,
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.projects }),
+    onSuccess: (_data, id) => {
+      qc.removeQueries({ queryKey: keys.project(id) })
+      qc.removeQueries({ queryKey: keys.environments(id) })
+      qc.invalidateQueries({ queryKey: keys.projects })
+    },
   })
 }
 
@@ -71,6 +82,7 @@ export function useEnvironment(id: string) {
     queryKey: keys.environment(id),
     queryFn: () => getEnvironment(id),
     enabled: !!id,
+    retry: false,
   })
 }
 
@@ -110,6 +122,28 @@ export function useApplication(id: string) {
     queryKey: keys.application(id),
     queryFn: () => getApplication(id),
     enabled: !!id,
+    retry: false,
+    refetchInterval: (query) => (query.state.data?.status === "building" ? 2000 : false),
+  })
+}
+
+export function useApplicationStats(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["applications", id, "stats"],
+    queryFn: () => getApplicationStats(id),
+    enabled: enabled && !!id,
+    retry: false,
+    refetchInterval: enabled ? 3000 : false,
+  })
+}
+
+export function useApplicationLogs(id: string, poll: boolean) {
+  return useQuery({
+    queryKey: ["applications", id, "logs"],
+    queryFn: () => getApplicationLogs(id),
+    enabled: !!id,
+    retry: false,
+    refetchInterval: poll ? 3000 : false,
   })
 }
 
