@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/zeynelkozak/miso/internal/store"
 )
 
 type environmentInput struct {
@@ -58,13 +57,9 @@ func (s *Server) handleDeleteEnvironment(w http.ResponseWriter, r *http.Request)
 	eid := chi.URLParam(r, "eid")
 	if s.docker != nil {
 		if env, err := s.store.GetEnvironment(eid); err == nil {
-			if apps, err := s.store.ListApplications(eid); err == nil {
-				ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
-				for _, a := range apps {
-					_ = s.docker.Remove(ctx, store.ContainerName(env.ProjectName, env.Name, a.Name))
-				}
-				cancel()
-			}
+			ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+			s.removeEnvContainers(ctx, env)
+			cancel()
 		}
 	}
 	if err := s.store.DeleteEnvironment(eid); err != nil {

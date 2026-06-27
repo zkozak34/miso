@@ -1,8 +1,10 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -61,7 +63,13 @@ func (s *Server) handleUpdateProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDeleteProject(w http.ResponseWriter, r *http.Request) {
-	if err := s.store.DeleteProject(chi.URLParam(r, "pid")); err != nil {
+	pid := chi.URLParam(r, "pid")
+	if s.docker != nil {
+		ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
+		s.removeProjectContainers(ctx, pid)
+		cancel()
+	}
+	if err := s.store.DeleteProject(pid); err != nil {
 		writeError(w, err)
 		return
 	}

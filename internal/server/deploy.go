@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -129,11 +130,12 @@ func (s *Server) runDeploy(app store.Application, image, gitURL string, lb *buil
 		return
 	}
 
+	// Write the final log line before flipping status so a log stream that
+	// stops on the status change still captures it.
+	fmt.Fprintf(lb, "==> Dağıtım tamamlandı\n")
 	if _, err := s.store.MarkApplicationDeployed(app.ID, image, cid); err != nil {
 		log.Printf("deploy: mark deployed %s: %v", app.ID, err)
-		return
 	}
-	fmt.Fprintf(lb, "==> Dağıtım tamamlandı\n")
 }
 
 func (s *Server) failDeploy(appID string, lb *buildLog, stage string, cause error) {
@@ -225,6 +227,109 @@ func (s *Server) handleApplicationStats(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	writeJSON(w, stat)
+}
+
+// handleApplicationLogStream streams build output live over SSE while the
+// application is building, then sends a "done" event. After the build finishes
+// the client falls back to polling container logs.
+func (s *Server) handleApplicationLogStream(w http.ResponseWriter, r *http.Request) {
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+	aid := chi.URLParam(r, "aid")
+	if _, err := s.store.GetApplication(aid); err != nil {
+		writeError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
+
+	ctx := r.Context()
+	offset := 0
+
+	// emit sends any new build-log bytes and reports whether the build is over.
+	emit := func() (status string, done bool) {
+		if lb := s.getBuildLog(aid); lb != nil {
+			full := lb.String()
+			if len(full) > offset {
+				writeSSEData(w, full[offset:])
+				offset = len(full)
+			}
+		}
+		app, err := s.store.GetApplication(aid)
+		if err != nil {
+			return "", true
+		}
+		return app.Status, app.Status != store.StatusBuilding
+	}
+
+	finish := func(status string) {
+		writeSSEEvent(w, "done", status)
+		flusher.Flush()
+	}
+
+	if status, done := emit(); done {
+		finish(status)
+		return
+	}
+	flusher.Flush()
+
+	ticker := time.NewTicker(400 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			status, done := emit()
+			flusher.Flush()
+			if done {
+				finish(status)
+				return
+			}
+		}
+	}
+}
+
+// writeSSEData emits data as a single SSE message, preserving embedded newlines
+// by splitting them across data: fields (the client rejoins them with "\n").
+func writeSSEData(w io.Writer, data string) {
+	for _, line := range strings.Split(data, "\n") {
+		fmt.Fprintf(w, "data: %s\n", line)
+	}
+	fmt.Fprint(w, "\n")
+}
+
+func writeSSEEvent(w io.Writer, event, data string) {
+	fmt.Fprintf(w, "event: %s\ndata: %s\n\n", event, data)
+}
+
+// removeEnvContainers removes the Docker container of every application in env.
+func (s *Server) removeEnvContainers(ctx context.Context, env store.Environment) {
+	apps, err := s.store.ListApplications(env.ID)
+	if err != nil {
+		return
+	}
+	for _, a := range apps {
+		_ = s.docker.Remove(ctx, store.ContainerName(env.ProjectName, env.Name, a.Name))
+	}
+}
+
+// removeProjectContainers removes the containers of every application across all
+// environments of a project.
+func (s *Server) removeProjectContainers(ctx context.Context, pid string) {
+	envs, err := s.store.ListEnvironments(pid)
+	if err != nil {
+		return
+	}
+	for _, e := range envs {
+		s.removeEnvContainers(ctx, e)
+	}
 }
 
 func derefPort(p *int) int {

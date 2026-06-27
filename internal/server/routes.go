@@ -39,6 +39,7 @@ func (s *Server) routes() http.Handler {
 			r.Get("/", s.handleGetApplication)
 			r.Delete("/", s.handleDeleteApplication)
 			r.Get("/logs", s.handleApplicationLogs)
+			r.Get("/logs/stream", s.handleApplicationLogStream)
 			r.Get("/stats", s.handleApplicationStats)
 			r.Post("/{action}", s.handleApplicationAction)
 		})

@@ -352,15 +352,30 @@ function Overview({ app }: { app: Application }) {
 }
 
 function Logs({ app }: { app: Application }) {
-  const poll = app.status === "running" || app.status === "building"
-  const { data, isLoading } = useApplicationLogs(app.id, poll)
-  const logs = data?.logs?.trimEnd() ?? ""
+  const building = app.status === "building"
+  const [liveLog, setLiveLog] = useState("")
+
+  // While building, stream the daemon's build output live over SSE.
+  useEffect(() => {
+    if (!building) return
+    setLiveLog("")
+    const es = new EventSource(`/api/applications/${app.id}/logs/stream`)
+    es.onmessage = (e) => setLiveLog((prev) => prev + e.data)
+    es.addEventListener("done", () => es.close())
+    es.onerror = () => es.close()
+    return () => es.close()
+  }, [building, app.id])
+
+  // Once running/stopped, fall back to polling container logs.
+  const { data, isLoading } = useApplicationLogs(app.id, app.status === "running")
+  const content = building ? liveLog : (data?.logs?.trimEnd() ?? "")
+  const placeholder = building || isLoading ? "Yükleniyor…" : "Henüz log yok. Uygulamayı dağıtın."
 
   return (
     <Card>
       <CardContent className="p-0">
         <pre className="max-h-[480px] overflow-auto whitespace-pre-wrap p-4 font-mono text-xs leading-relaxed">
-          {logs || (isLoading ? "Yükleniyor…" : "Henüz log yok. Uygulamayı dağıtın.")}
+          {content || placeholder}
         </pre>
       </CardContent>
     </Card>
