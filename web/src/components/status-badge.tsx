@@ -13,11 +13,11 @@ export function StatusBadge({ status, className }: { status: ResourceStatus; cla
   return (
     <span
       className={cn(
-        "inline-flex h-[22px] flex-none items-center gap-1.5 rounded-full border bg-surface-2 pl-2 pr-2.5",
+        "inline-flex h-5.5 flex-none items-center gap-1.5 rounded-full border bg-surface-2 pl-2 pr-2.5",
         className,
       )}
     >
-      <span className="relative flex h-[7px] w-[7px] flex-none">
+      <span className="relative flex h-1.75 w-1.75 flex-none">
         <span className="absolute inset-0 rounded-full" style={{ background: c.color }} />
         {c.pulse && (
           <span

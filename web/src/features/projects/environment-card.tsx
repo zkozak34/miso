@@ -9,7 +9,7 @@ export function EnvironmentCard({ environment }: { environment: Environment }) {
   return (
     <Card
       onClick={() => navigate(`/projects/${environment.projectId}/environments/${environment.id}`)}
-      className="cursor-pointer gap-3.5 p-[17px] transition-all duration-150 hover:-translate-y-px hover:border-border-strong"
+      className="cursor-pointer gap-3.5 p-4.25 transition-all duration-150 hover:-translate-y-px hover:border-border-strong"
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="font-mono text-base font-semibold tracking-tight">{environment.name}</h3>

@@ -24,7 +24,13 @@ export function UsageAreaChart({
   height = 220,
 }: UsageAreaChartProps) {
   return (
-    <ResponsiveContainer width="100%" height={compact ? "100%" : height}>
+    // initialDimension gives ResponsiveContainer valid starting dimensions so it
+    // doesn't log "width(-1) height(-1)" before its ResizeObserver first fires.
+    <ResponsiveContainer
+      width="100%"
+      height={compact ? "100%" : height}
+      initialDimension={{ width: 320, height: compact ? 48 : height }}
+    >
       <AreaChart
         data={data}
         margin={

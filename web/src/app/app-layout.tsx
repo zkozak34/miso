@@ -41,7 +41,7 @@ function NavItems({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: 
           title={label}
           className={({ isActive }) =>
             cn(
-              "relative flex h-[38px] items-center gap-3 rounded-lg px-3 text-[13.5px] transition-colors",
+              "relative flex h-9.5 items-center gap-3 rounded-lg px-3 text-[13.5px] transition-colors",
               collapsed && "justify-center px-0",
               isActive
                 ? "bg-accent font-semibold text-foreground"
@@ -54,7 +54,7 @@ function NavItems({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: 
               {isActive && (
                 <span className="absolute -left-2.5 top-2 bottom-2 w-[2.5px] rounded-full bg-primary" />
               )}
-              <Icon className="h-[18px] w-[18px] flex-none" />
+              <Icon className="h-4.5 w-4.5 flex-none" />
               {!collapsed && <span className="whitespace-nowrap">{label}</span>}
             </>
           )}
@@ -68,8 +68,8 @@ function HostHealthChip() {
   const { data } = useSystemInfo()
   const host = data?.hostname ?? "node"
   return (
-    <div className="flex h-[30px] items-center gap-2 rounded-[7px] border bg-card px-2.5">
-      <span className="relative flex h-[7px] w-[7px] flex-none">
+    <div className="flex h-7.5 items-center gap-2 rounded-[7px] border bg-card px-2.5">
+      <span className="relative flex h-1.75 w-1.75 flex-none">
         <span className="absolute inset-0 rounded-full bg-emerald-400" />
         <span
           className="absolute inset-0 rounded-full bg-emerald-400"
@@ -92,8 +92,8 @@ export function AppLayout() {
     localStorage.setItem("miso.sidebar-collapsed", collapsed ? "1" : "0")
   }, [collapsed])
 
-  const sidebarWidth = collapsed ? "w-[62px]" : "w-[232px]"
-  const mainPad = collapsed ? "md:pl-[62px]" : "md:pl-[232px]"
+  const sidebarWidth = collapsed ? "w-15.5" : "w-58"
+  const mainPad = collapsed ? "md:pl-15.5" : "md:pl-58"
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,15 +112,15 @@ export function AppLayout() {
             type="button"
             onClick={() => setCollapsed((c) => !c)}
             className={cn(
-              "flex h-[34px] w-full items-center gap-3 rounded-lg px-3 text-[12.5px] text-text-tertiary transition-colors hover:bg-accent hover:text-muted-foreground",
+              "flex h-8.5 w-full items-center gap-3 rounded-lg px-3 text-[12.5px] text-text-tertiary transition-colors hover:bg-accent hover:text-muted-foreground",
               collapsed && "justify-center px-0",
             )}
           >
             {collapsed ? (
-              <PanelLeftOpen className="h-[18px] w-[18px] flex-none" />
+              <PanelLeftOpen className="h-4.5 w-4.5 flex-none" />
             ) : (
               <>
-                <PanelLeftClose className="h-[18px] w-[18px] flex-none" />
+                <PanelLeftClose className="h-4.5 w-4.5 flex-none" />
                 <span className="whitespace-nowrap">Daralt</span>
               </>
             )}
@@ -136,7 +136,7 @@ export function AppLayout() {
             className="absolute inset-0 bg-[var(--scrim)]"
             onClick={() => setDrawerOpen(false)}
           />
-          <aside className="relative flex h-full w-[262px] flex-col border-r bg-surface-2">
+          <aside className="relative flex h-full w-65.5 flex-col border-r bg-surface-2">
             <div className="flex h-14 flex-none items-center justify-between border-b px-4">
               <Logo showText />
               <button
@@ -163,7 +163,7 @@ export function AppLayout() {
           type="button"
           aria-label="Menü"
           onClick={() => setDrawerOpen(true)}
-          className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[7px] text-muted-foreground hover:bg-accent md:hidden"
+          className="flex h-8.5 w-8.5 flex-none items-center justify-center rounded-[7px] text-muted-foreground hover:bg-accent md:hidden"
         >
           <Menu className="h-5 w-5" />
         </button>

@@ -84,7 +84,7 @@ export function ProjectPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading
           ? Array.from({ length: 2 }).map((_, i) => (
-              <Skeleton key={i} className="h-[104px] rounded-xl" />
+              <Skeleton key={i} className="h-26 rounded-xl" />
             ))
           : environments?.map((e) => <EnvironmentCard key={e.id} environment={e} />)}
         {!isLoading && <AddCard label="Yeni environment" onClick={() => setDialogOpen(true)} />}

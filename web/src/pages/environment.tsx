@@ -95,7 +95,7 @@ export function EnvironmentPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {isLoading
           ? Array.from({ length: 2 }).map((_, i) => (
-              <Skeleton key={i} className="h-[130px] rounded-xl" />
+              <Skeleton key={i} className="h-32.5 rounded-xl" />
             ))
           : apps?.map((a) => <ApplicationCard key={a.id} app={a} to={appLink(a.id)} />)}
         {!isLoading && <AddCard label="Uygulama ekle" onClick={() => setDialogOpen(true)} />}

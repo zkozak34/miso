@@ -418,9 +418,9 @@ function Logs({ app }: { app: Application }) {
         : "Henüz log yok. Uygulamayı dağıtın."
 
   return (
-    <div className="flex h-[560px] flex-col overflow-hidden rounded-xl border bg-muted/20">
+    <div className="flex h-140 flex-col overflow-hidden rounded-xl border bg-muted/20">
       <div className="flex flex-wrap items-center gap-2.5 border-b bg-muted/40 p-2.5">
-        <div className="flex h-8 min-w-[160px] flex-1 items-center gap-2 rounded-md border bg-background px-2.5">
+        <div className="flex h-8 min-w-40 flex-1 items-center gap-2 rounded-md border bg-background px-2.5">
           <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           <input
             value={filter}
@@ -438,7 +438,7 @@ function Logs({ app }: { app: Application }) {
               : "bg-background text-muted-foreground hover:text-foreground"
           }`}
         >
-          <span className="relative flex h-[7px] w-[7px]">
+          <span className="relative flex h-1.75 w-1.75">
             <span
               className={`absolute inset-0 rounded-full ${follow ? "bg-emerald-400" : "bg-muted-foreground"}`}
             />
@@ -478,7 +478,7 @@ function Logs({ app }: { app: Application }) {
             ))}
             {live && (
               <div className="flex items-center gap-2 px-3.5 py-1.5 text-[11px] text-muted-foreground/60">
-                <span className="inline-block h-[11px] w-[6px] animate-pulse bg-emerald-400" />
+                <span className="inline-block h-2.75 w-1.5 animate-pulse bg-emerald-400" />
                 streaming · {filtered.length} satır
               </div>
             )}
@@ -852,7 +852,7 @@ function Environment({ app }: { app: Application }) {
             <div className="flex items-center gap-2 px-1 text-[11px] uppercase tracking-wide text-muted-foreground">
               <span className="flex-1">Key</span>
               <span className="flex-[1.4]">Value</span>
-              <span className="w-[150px] shrink-0">Seçenekler</span>
+              <span className="w-37.5 shrink-0">Seçenekler</span>
             </div>
             {rows.map((r, i) => (
               <div key={r.rid} className="flex items-center gap-2">
@@ -881,7 +881,7 @@ function Environment({ app }: { app: Application }) {
                     </button>
                   )}
                 </div>
-                <div className="flex w-[150px] shrink-0 items-center gap-2">
+                <div className="flex w-37.5 shrink-0 items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setRow(i, { secret: !r.secret })}
@@ -890,7 +890,7 @@ function Environment({ app }: { app: Application }) {
                     }`}
                   >
                     <span
-                      className={`relative h-[15px] w-[26px] shrink-0 rounded-full transition-colors ${
+                      className={`relative h-3.75 w-6.5 shrink-0 rounded-full transition-colors ${
                         r.secret ? "bg-primary" : "bg-input"
                       }`}
                     >

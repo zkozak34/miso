@@ -96,7 +96,7 @@ export function AddApplicationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[560px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-140">
         <DialogHeader>
           <DialogTitle>Uygulama ekle</DialogTitle>
           <DialogDescription>Bu environment'a yeni bir Docker container dağıt.</DialogDescription>
