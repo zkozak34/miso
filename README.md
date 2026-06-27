@@ -90,6 +90,9 @@ make build      # web/dist'i derler, internal/server/dist'e gömer, bin/miso ür
 | GET | `/api/applications/{aid}/logs/stream` | derleme logları canlı (SSE) |
 | GET | `/api/applications/{aid}/stats` | canlı CPU/bellek/ağ istatistiği |
 | GET | `/api/applications/{aid}/deployments` | dağıtım geçmişi (durum/imaj/tetikleyici/süre) |
+| GET | `/api/applications/{aid}/webhook` | GitHub webhook URL + secret |
+| POST | `/api/applications/{aid}/webhook/regenerate` | webhook secret'ını yenile |
+| POST | `/api/webhooks/github/{webhookId}` | GitHub webhook teslimatı (HMAC imzalı; push'ta deploy) |
 
 ## Komutlar
 

@@ -15,11 +15,13 @@ import {
   getApplicationStats,
   getEnvironment,
   getProject,
+  getWebhook,
   listApplications,
   listDeployments,
   listEnvironments,
   listProjects,
   listTemplates,
+  regenerateWebhook,
   type UpdateApplicationInput,
   updateApplication,
   updateApplicationEnv,
@@ -164,6 +166,23 @@ export function useDeployments(id: string, poll: boolean) {
     enabled: !!id,
     retry: false,
     refetchInterval: poll ? 2000 : false,
+  })
+}
+
+export function useWebhook(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["applications", id, "webhook"],
+    queryFn: () => getWebhook(id),
+    enabled: enabled && !!id,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+}
+
+export function useRegenerateWebhook(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => regenerateWebhook(id),
+    onSuccess: (data) => qc.setQueryData(["applications", id, "webhook"], data),
   })
 }
 

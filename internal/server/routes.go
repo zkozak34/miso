@@ -20,6 +20,8 @@ func (s *Server) routes() http.Handler {
 		api.Get("/metrics", s.handleMetrics)
 		api.Handle("/metrics/stream", sse.NewHandler(2*time.Second))
 		api.Get("/templates", s.handleListTemplates)
+		// GitHub posts deliveries here; secured per-app by HMAC signature.
+		api.Post("/webhooks/github/{webhookId}", s.handleGitHubWebhook)
 
 		api.Route("/projects", func(r chi.Router) {
 			r.Get("/", s.handleListProjects)
@@ -45,7 +47,10 @@ func (s *Server) routes() http.Handler {
 			r.Get("/logs/stream", s.handleApplicationLogStream)
 			r.Get("/stats", s.handleApplicationStats)
 			r.Get("/deployments", s.handleListDeployments)
-			r.Post("/{action}", s.handleApplicationAction)
+			r.Get("/webhook", s.handleGetWebhook)
+			r.Post("/webhook/regenerate", s.handleRegenerateWebhook)
+			// Constrain the action param so it can't shadow the static routes above.
+			r.Post("/{action:deploy|stop|restart}", s.handleApplicationAction)
 		})
 	})
 

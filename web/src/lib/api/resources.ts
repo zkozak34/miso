@@ -118,6 +118,12 @@ export interface Deployment {
   durationMs: number
 }
 
+export interface WebhookConfig {
+  url: string
+  secret: string
+  branch: string
+}
+
 export interface AppStats {
   cpuPercent: number
   memoryUsage: number
@@ -191,3 +197,6 @@ export const getApplicationLogs = (id: string) =>
   request<{ logs: string }>(`/api/applications/${id}/logs`)
 export const listDeployments = (id: string) =>
   request<Deployment[]>(`/api/applications/${id}/deployments`)
+export const getWebhook = (id: string) => request<WebhookConfig>(`/api/applications/${id}/webhook`)
+export const regenerateWebhook = (id: string) =>
+  request<WebhookConfig>(`/api/applications/${id}/webhook/regenerate`, { method: "POST" })

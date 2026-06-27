@@ -68,6 +68,8 @@ func migrate(db *sql.DB) error {
 		{"restart_policy", `ALTER TABLE applications ADD COLUMN restart_policy TEXT NOT NULL DEFAULT 'unless-stopped'`},
 		{"env_vars", `ALTER TABLE applications ADD COLUMN env_vars TEXT NOT NULL DEFAULT '[]'`},
 		{"template_id", `ALTER TABLE applications ADD COLUMN template_id TEXT NOT NULL DEFAULT ''`},
+		{"webhook_id", `ALTER TABLE applications ADD COLUMN webhook_id TEXT NOT NULL DEFAULT ''`},
+		{"webhook_secret", `ALTER TABLE applications ADD COLUMN webhook_secret TEXT NOT NULL DEFAULT ''`},
 	}
 	for _, a := range add {
 		if cols[a.name] {
@@ -82,8 +84,11 @@ func migrate(db *sql.DB) error {
 
 func (s *Store) Close() error { return s.db.Close() }
 
-func newID() string {
-	b := make([]byte, 16)
+func newID() string { return newToken(16) }
+
+// newToken returns a random hex string of n bytes of entropy (2n hex chars).
+func newToken(n int) string {
+	b := make([]byte, n)
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
 }
@@ -285,10 +290,10 @@ func (s *Store) CreateApplication(envID string, in ApplicationInput) (Applicatio
 	envVars, _ := json.Marshal(normalizeEnvVars(in.EnvVars))
 	if _, err := s.db.Exec(`
 		INSERT INTO applications (id, environment_id, name, source_type, template_id, repo_url, branch, dockerfile_path,
-		  build_args, auth_token, image, host_port, container_port, env_vars, status, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		  build_args, auth_token, image, host_port, container_port, env_vars, webhook_id, webhook_secret, status, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		id, envID, in.Name, source, in.TemplateID, in.RepoURL, branch, dockerfile, string(args), in.AuthToken, in.Image,
-		in.HostPort, in.ContainerPort, string(envVars), StatusStopped, ts, ts); err != nil {
+		in.HostPort, in.ContainerPort, string(envVars), newID(), newToken(24), StatusStopped, ts, ts); err != nil {
 		return Application{}, err
 	}
 	return s.GetApplication(id)
@@ -374,6 +379,54 @@ func (s *Store) SetApplicationStatus(id, status string) (Application, error) {
 		return Application{}, ErrNotFound
 	}
 	return s.GetApplication(id)
+}
+
+// ApplicationWebhook returns the application's webhook id and secret, lazily
+// generating and persisting them for rows created before webhooks existed.
+func (s *Store) ApplicationWebhook(id string) (webhookID, secret string, err error) {
+	err = s.db.QueryRow(`SELECT webhook_id, webhook_secret FROM applications WHERE id = ?`, id).Scan(&webhookID, &secret)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", "", ErrNotFound
+	}
+	if err != nil {
+		return "", "", err
+	}
+	if webhookID == "" || secret == "" {
+		webhookID, secret = newID(), newToken(24)
+		if _, err = s.db.Exec(`UPDATE applications SET webhook_id = ?, webhook_secret = ? WHERE id = ?`, webhookID, secret, id); err != nil {
+			return "", "", err
+		}
+	}
+	return webhookID, secret, nil
+}
+
+// RegenerateWebhookSecret rotates the application's webhook secret and returns
+// the new value. Any GitHub webhook configured with the old secret stops working.
+func (s *Store) RegenerateWebhookSecret(id string) (string, error) {
+	secret := newToken(24)
+	res, err := s.db.Exec(`UPDATE applications SET webhook_secret = ?, updated_at = ? WHERE id = ?`, secret, now(), id)
+	if err != nil {
+		return "", err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return "", ErrNotFound
+	}
+	return secret, nil
+}
+
+// GetApplicationByWebhookID resolves the application a webhook delivery targets,
+// returning the full application plus its secret for signature verification.
+func (s *Store) GetApplicationByWebhookID(webhookID string) (Application, string, error) {
+	var id, secret string
+	err := s.db.QueryRow(`SELECT id, webhook_secret FROM applications WHERE webhook_id = ?`, webhookID).Scan(&id, &secret)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Application{}, "", ErrNotFound
+	}
+	if err != nil {
+		return Application{}, "", err
+	}
+	app, err := s.GetApplication(id)
+	return app, secret, err
 }
 
 // CreateDeployment records the start of a deploy attempt (status building) and

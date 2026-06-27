@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS applications (
     last_error      TEXT NOT NULL DEFAULT '',
     restart_policy  TEXT NOT NULL DEFAULT 'unless-stopped',
     env_vars        TEXT NOT NULL DEFAULT '[]',
+    webhook_id      TEXT NOT NULL DEFAULT '',
+    webhook_secret  TEXT NOT NULL DEFAULT '',
     status          TEXT NOT NULL DEFAULT 'stopped',
     created_at      INTEGER NOT NULL,
     updated_at      INTEGER NOT NULL

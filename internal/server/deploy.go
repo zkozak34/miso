@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -81,22 +82,42 @@ func isImageSource(app store.Application) bool {
 	return app.SourceType == "docker" || app.SourceType == "template"
 }
 
+// Sentinel errors for deploy validation, mapped to HTTP 400 by callers.
+var (
+	errDeployNoImage = errors.New("imaj gerekli")
+	errDeployNoRepo  = errors.New("repository URL gerekli")
+)
+
 func (s *Server) deploy(w http.ResponseWriter, app store.Application) {
+	a, err := s.startDeploy(app, "manual")
+	if err != nil {
+		if errors.Is(err, errDeployNoImage) || errors.Is(err, errDeployNoRepo) {
+			writeStatus(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return
+		}
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, a)
+}
+
+// startDeploy validates the source, marks the app building, records a deployment
+// with the given trigger ("manual", "push · <branch>", …) and kicks off the
+// async build/pull+run. It returns the updated application. The caller must
+// ensure Docker is available before calling.
+func (s *Server) startDeploy(app store.Application, trigger string) (store.Application, error) {
 	imageSource := isImageSource(app)
 	if imageSource {
 		if strings.TrimSpace(app.Image) == "" {
-			writeStatus(w, http.StatusBadRequest, map[string]string{"error": "imaj gerekli"})
-			return
+			return store.Application{}, errDeployNoImage
 		}
 	} else if strings.TrimSpace(app.RepoURL) == "" {
-		writeStatus(w, http.StatusBadRequest, map[string]string{"error": "repository URL gerekli"})
-		return
+		return store.Application{}, errDeployNoRepo
 	}
 
 	a, err := s.store.SetApplicationStatus(app.ID, store.StatusBuilding)
 	if err != nil {
-		writeError(w, err)
-		return
+		return store.Application{}, err
 	}
 	lb := s.newBuildLog(app.ID)
 
@@ -107,7 +128,7 @@ func (s *Server) deploy(w http.ResponseWriter, app store.Application) {
 		image = store.ImageName(app.ContainerName)
 	}
 	depID := ""
-	if dep, derr := s.store.CreateDeployment(app.ID, image, "manual"); derr == nil {
+	if dep, derr := s.store.CreateDeployment(app.ID, image, trigger); derr == nil {
 		depID = dep.ID
 	} else {
 		log.Printf("deploy: create deployment %s: %v", app.ID, derr)
@@ -122,8 +143,7 @@ func (s *Server) deploy(w http.ResponseWriter, app store.Application) {
 		fmt.Fprintf(lb, "==> %s imajı %s reposundan derleniyor\n", image, app.RepoURL)
 		go s.runDeploy(app, image, gitURL, lb, depID)
 	}
-
-	writeJSON(w, a)
+	return a, nil
 }
 
 // runDeploy builds the image then (re)creates and starts the container,
