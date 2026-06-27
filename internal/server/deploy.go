@@ -123,6 +123,7 @@ func (s *Server) runDeploy(app store.Application, image, gitURL string, lb *buil
 		Name:          app.ContainerName,
 		HostPort:      derefPort(app.HostPort),
 		ContainerPort: derefPort(app.ContainerPort),
+		RestartPolicy: app.RestartPolicy,
 		Labels:        labels,
 	})
 	if err != nil {

@@ -51,6 +51,23 @@ func (s *Server) handleGetApplication(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, a)
 }
 
+func (s *Server) handleUpdateApplication(w http.ResponseWriter, r *http.Request) {
+	var in store.ApplicationSettings
+	if !decodeJSON(w, r, &in) {
+		return
+	}
+	if in.RestartPolicy != "" && !store.ValidRestartPolicy(in.RestartPolicy) {
+		writeStatus(w, http.StatusBadRequest, map[string]string{"error": "geçersiz restart policy"})
+		return
+	}
+	a, err := s.store.UpdateApplicationSettings(chi.URLParam(r, "aid"), in)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, a)
+}
+
 func (s *Server) handleDeleteApplication(w http.ResponseWriter, r *http.Request) {
 	aid := chi.URLParam(r, "aid")
 	if s.docker != nil {

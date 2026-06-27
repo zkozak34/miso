@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS applications (
     container_port  INTEGER,
     container_id    TEXT NOT NULL DEFAULT '',
     last_error      TEXT NOT NULL DEFAULT '',
+    restart_policy  TEXT NOT NULL DEFAULT 'unless-stopped',
     status          TEXT NOT NULL DEFAULT 'stopped',
     created_at      INTEGER NOT NULL,
     updated_at      INTEGER NOT NULL

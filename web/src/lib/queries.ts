@@ -17,6 +17,8 @@ import {
   listApplications,
   listEnvironments,
   listProjects,
+  type UpdateApplicationInput,
+  updateApplication,
 } from "@/lib/api/resources"
 
 export const keys = {
@@ -165,6 +167,17 @@ export function useDeleteApplication(envId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.applications(envId) })
       qc.invalidateQueries({ queryKey: keys.environment(envId) })
+    },
+  })
+}
+
+export function useUpdateApplication(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: UpdateApplicationInput) => updateApplication(id, input),
+    onSuccess: (app) => {
+      qc.setQueryData(keys.application(id), app)
+      qc.invalidateQueries({ queryKey: keys.applications(app.environmentId) })
     },
   })
 }

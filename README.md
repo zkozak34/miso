@@ -81,7 +81,7 @@ make build      # web/dist'i derler, internal/server/dist'e gömer, bin/miso ür
 | GET/POST | `/api/projects/{pid}/environments` | environment listele / oluştur |
 | GET/DELETE | `/api/environments/{eid}` | tekil environment |
 | GET/POST | `/api/environments/{eid}/applications` | uygulama listele / oluştur |
-| GET/DELETE | `/api/applications/{aid}` | tekil uygulama (silmede container da kaldırılır) |
+| GET/PATCH/DELETE | `/api/applications/{aid}` | tekil uygulama (PATCH: port + restart policy; silmede container da kaldırılır) |
 | | | _proje/env silmede de alt container'lar temizlenir_ |
 | POST | `/api/applications/{aid}/{deploy\|stop\|restart}` | gerçek Docker aksiyonu |
 | GET | `/api/applications/{aid}/logs` | container (veya derleme) logları |

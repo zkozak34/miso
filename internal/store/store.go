@@ -65,6 +65,7 @@ func migrate(db *sql.DB) error {
 	add := []struct{ name, ddl string }{
 		{"container_id", `ALTER TABLE applications ADD COLUMN container_id TEXT NOT NULL DEFAULT ''`},
 		{"last_error", `ALTER TABLE applications ADD COLUMN last_error TEXT NOT NULL DEFAULT ''`},
+		{"restart_policy", `ALTER TABLE applications ADD COLUMN restart_policy TEXT NOT NULL DEFAULT 'unless-stopped'`},
 	}
 	for _, a := range add {
 		if cols[a.name] {
@@ -214,7 +215,7 @@ func (s *Store) DeleteEnvironment(id string) error { return s.deleteByID("enviro
 func (s *Store) ListApplications(envID string) ([]Application, error) {
 	const q = `
 		SELECT id, environment_id, name, source_type, repo_url, branch, dockerfile_path,
-		  build_args, (auth_token != ''), image, host_port, container_port, container_id, last_error, status, created_at, updated_at
+		  build_args, (auth_token != ''), image, host_port, container_port, container_id, last_error, restart_policy, status, created_at, updated_at
 		FROM applications WHERE environment_id = ? ORDER BY created_at ASC`
 	rows, err := s.db.Query(q, envID)
 	if err != nil {
@@ -235,7 +236,7 @@ func (s *Store) ListApplications(envID string) ([]Application, error) {
 func (s *Store) GetApplication(id string) (Application, error) {
 	const q = `
 		SELECT a.id, a.environment_id, a.name, a.source_type, a.repo_url, a.branch, a.dockerfile_path,
-		  a.build_args, (a.auth_token != ''), a.image, a.host_port, a.container_port, a.container_id, a.last_error, a.status, a.created_at, a.updated_at,
+		  a.build_args, (a.auth_token != ''), a.image, a.host_port, a.container_port, a.container_id, a.last_error, a.restart_policy, a.status, a.created_at, a.updated_at,
 		  e.project_id, p.name, e.name
 		FROM applications a
 		JOIN environments e ON a.environment_id = e.id
@@ -246,7 +247,7 @@ func (s *Store) GetApplication(id string) (Application, error) {
 	var buildArgs string
 	var hasToken bool
 	if err := row.Scan(&a.ID, &a.EnvironmentID, &a.Name, &a.SourceType, &a.RepoURL, &a.Branch, &a.DockerfilePath,
-		&buildArgs, &hasToken, &a.Image, &a.HostPort, &a.ContainerPort, &a.ContainerID, &a.LastError, &a.Status, &a.CreatedAt, &a.UpdatedAt,
+		&buildArgs, &hasToken, &a.Image, &a.HostPort, &a.ContainerPort, &a.ContainerID, &a.LastError, &a.RestartPolicy, &a.Status, &a.CreatedAt, &a.UpdatedAt,
 		&a.ProjectID, &a.ProjectName, &a.EnvironmentNm); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Application{}, ErrNotFound
@@ -285,6 +286,25 @@ func (s *Store) CreateApplication(envID string, in ApplicationInput) (Applicatio
 		id, envID, in.Name, source, in.RepoURL, branch, dockerfile, string(args), in.AuthToken, in.Image,
 		in.HostPort, in.ContainerPort, StatusStopped, ts, ts); err != nil {
 		return Application{}, err
+	}
+	return s.GetApplication(id)
+}
+
+// UpdateApplicationSettings persists the runtime settings editable from the
+// detail page (ports, restart policy). They apply on the next deploy.
+func (s *Store) UpdateApplicationSettings(id string, in ApplicationSettings) (Application, error) {
+	policy := in.RestartPolicy
+	if !ValidRestartPolicy(policy) {
+		policy = "unless-stopped"
+	}
+	res, err := s.db.Exec(
+		`UPDATE applications SET host_port = ?, container_port = ?, restart_policy = ?, updated_at = ? WHERE id = ?`,
+		in.HostPort, in.ContainerPort, policy, now(), id)
+	if err != nil {
+		return Application{}, err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return Application{}, ErrNotFound
 	}
 	return s.GetApplication(id)
 }
@@ -351,7 +371,7 @@ func scanApplication(rows *sql.Rows) (Application, error) {
 	var buildArgs string
 	var hasToken bool
 	if err := rows.Scan(&a.ID, &a.EnvironmentID, &a.Name, &a.SourceType, &a.RepoURL, &a.Branch, &a.DockerfilePath,
-		&buildArgs, &hasToken, &a.Image, &a.HostPort, &a.ContainerPort, &a.ContainerID, &a.LastError, &a.Status, &a.CreatedAt, &a.UpdatedAt); err != nil {
+		&buildArgs, &hasToken, &a.Image, &a.HostPort, &a.ContainerPort, &a.ContainerID, &a.LastError, &a.RestartPolicy, &a.Status, &a.CreatedAt, &a.UpdatedAt); err != nil {
 		return Application{}, err
 	}
 	a.BuildArgs = decodeBuildArgs(buildArgs)

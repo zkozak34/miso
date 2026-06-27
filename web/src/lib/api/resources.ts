@@ -24,6 +24,8 @@ export interface Environment {
 
 export type AppSource = "git" | "docker" | "template"
 
+export type RestartPolicy = "no" | "on-failure" | "unless-stopped" | "always"
+
 export interface Application {
   id: string
   environmentId: string
@@ -37,6 +39,7 @@ export interface Application {
   image: string
   hostPort: number | null
   containerPort: number | null
+  restartPolicy: RestartPolicy
   lastError?: string
   status: ResourceStatus
   projectId?: string
@@ -58,6 +61,12 @@ export interface CreateApplicationInput {
   image?: string
   hostPort?: number | null
   containerPort?: number | null
+}
+
+export interface UpdateApplicationInput {
+  hostPort: number | null
+  containerPort: number | null
+  restartPolicy: RestartPolicy
 }
 
 export interface AppStats {
@@ -109,6 +118,11 @@ export const getApplication = (id: string) => request<Application>(`/api/applica
 export const createApplication = (envId: string, input: CreateApplicationInput) =>
   request<Application>(`/api/environments/${envId}/applications`, {
     method: "POST",
+    body: JSON.stringify(input),
+  })
+export const updateApplication = (id: string, input: UpdateApplicationInput) =>
+  request<Application>(`/api/applications/${id}`, {
+    method: "PATCH",
     body: JSON.stringify(input),
   })
 export const deleteApplication = (id: string) =>

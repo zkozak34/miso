@@ -121,6 +121,7 @@ type RunSpec struct {
 	Name          string
 	HostPort      int
 	ContainerPort int
+	RestartPolicy string
 	Labels        map[string]string
 }
 
@@ -133,8 +134,12 @@ func (c *Client) Run(ctx context.Context, spec RunSpec) (string, error) {
 		Image:  spec.Image,
 		Labels: spec.Labels,
 	}
+	policy := container.RestartPolicyMode(spec.RestartPolicy)
+	if policy == "" {
+		policy = container.RestartPolicyUnlessStopped
+	}
 	host := &container.HostConfig{
-		RestartPolicy: container.RestartPolicy{Name: container.RestartPolicyUnlessStopped},
+		RestartPolicy: container.RestartPolicy{Name: policy},
 	}
 
 	if spec.ContainerPort > 0 {

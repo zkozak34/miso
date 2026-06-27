@@ -59,6 +59,7 @@ type Application struct {
 	ContainerPort  *int              `json:"containerPort"`
 	ContainerID    string            `json:"containerId,omitempty"`
 	LastError      string            `json:"lastError,omitempty"`
+	RestartPolicy  string            `json:"restartPolicy"`
 	Status         string            `json:"status"`
 	ProjectID      string            `json:"projectId,omitempty"`
 	ProjectName    string            `json:"projectName,omitempty"`
@@ -79,4 +80,21 @@ type ApplicationInput struct {
 	Image          string            `json:"image"`
 	HostPort       *int              `json:"hostPort"`
 	ContainerPort  *int              `json:"containerPort"`
+}
+
+// ApplicationSettings holds the runtime fields editable from the detail page's
+// Settings tab. They take effect on the next deploy.
+type ApplicationSettings struct {
+	HostPort      *int   `json:"hostPort"`
+	ContainerPort *int   `json:"containerPort"`
+	RestartPolicy string `json:"restartPolicy"`
+}
+
+// ValidRestartPolicy reports whether p is one of Docker's restart policy modes.
+func ValidRestartPolicy(p string) bool {
+	switch p {
+	case "no", "on-failure", "unless-stopped", "always":
+		return true
+	}
+	return false
 }
