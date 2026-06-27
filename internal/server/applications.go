@@ -86,9 +86,9 @@ func (s *Server) handleUpdateApplicationEnv(w http.ResponseWriter, r *http.Reque
 func (s *Server) handleDeleteApplication(w http.ResponseWriter, r *http.Request) {
 	aid := chi.URLParam(r, "aid")
 	if s.docker != nil {
-		if app, err := s.store.GetApplication(aid); err == nil {
+		if app, err := s.store.GetApplication(aid); err == nil && app.ContainerID != "" {
 			ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
-			_ = s.docker.Remove(ctx, app.ContainerName)
+			_ = s.docker.Remove(ctx, app.ContainerID)
 			cancel()
 		}
 	}

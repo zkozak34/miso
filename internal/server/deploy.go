@@ -149,9 +149,19 @@ func (s *Server) failDeploy(appID string, lb *buildLog, stage string, cause erro
 }
 
 func (s *Server) stopApp(w http.ResponseWriter, app store.Application) {
+	if app.ContainerID == "" {
+		// Never deployed: nothing to stop, just record the state.
+		a, err := s.store.SetApplicationStatus(app.ID, store.StatusStopped)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		writeJSON(w, a)
+		return
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if err := s.docker.Stop(ctx, app.ContainerName); err != nil && !docker.IsNotFound(err) {
+	if err := s.docker.Stop(ctx, app.ContainerID); err != nil && !docker.IsNotFound(err) {
 		writeStatus(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
@@ -164,9 +174,13 @@ func (s *Server) stopApp(w http.ResponseWriter, app store.Application) {
 }
 
 func (s *Server) restartApp(w http.ResponseWriter, app store.Application) {
+	if app.ContainerID == "" {
+		writeStatus(w, http.StatusConflict, map[string]string{"error": "Container bulunamadı, önce deploy edin"})
+		return
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if err := s.docker.Restart(ctx, app.ContainerName); err != nil {
+	if err := s.docker.Restart(ctx, app.ContainerID); err != nil {
 		if docker.IsNotFound(err) {
 			writeStatus(w, http.StatusConflict, map[string]string{"error": "Container bulunamadı, önce deploy edin"})
 			return
@@ -190,9 +204,11 @@ func (s *Server) handleApplicationLogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out := ""
-	if s.docker != nil {
+	// Look up logs by the exact container Miso deployed (by id), never by name,
+	// so we never surface an unrelated host container that shares the name.
+	if s.docker != nil && app.ContainerID != "" {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		logs, lerr := s.docker.Logs(ctx, app.ContainerName, 300)
+		logs, lerr := s.docker.Logs(ctx, app.ContainerID, 300)
 		cancel()
 		if lerr == nil {
 			out = logs
@@ -216,10 +232,15 @@ func (s *Server) handleApplicationStats(w http.ResponseWriter, r *http.Request) 
 		writeStatus(w, http.StatusServiceUnavailable, map[string]string{"error": "Docker daemon erişilemiyor"})
 		return
 	}
+	if app.ContainerID == "" {
+		// Never deployed: no container of ours to measure.
+		writeJSON(w, docker.Stat{})
+		return
+	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
-	stat, err := s.docker.Stats(ctx, app.ContainerName)
+	stat, err := s.docker.Stats(ctx, app.ContainerID)
 	if err != nil {
 		if docker.IsNotFound(err) {
 			writeJSON(w, docker.Stat{})
@@ -312,13 +333,17 @@ func writeSSEEvent(w io.Writer, event, data string) {
 }
 
 // removeEnvContainers removes the Docker container of every application in env.
+// It targets the exact container Miso deployed (by id) and skips apps that were
+// never deployed, so it can't remove an unrelated host container.
 func (s *Server) removeEnvContainers(ctx context.Context, env store.Environment) {
 	apps, err := s.store.ListApplications(env.ID)
 	if err != nil {
 		return
 	}
 	for _, a := range apps {
-		_ = s.docker.Remove(ctx, store.ContainerName(env.ProjectName, env.Name, a.Name))
+		if a.ContainerID != "" {
+			_ = s.docker.Remove(ctx, a.ContainerID)
+		}
 	}
 }
 

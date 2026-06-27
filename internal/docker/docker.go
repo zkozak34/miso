@@ -126,10 +126,19 @@ type RunSpec struct {
 	Labels        map[string]string
 }
 
-// Run removes any existing container with the same name, then creates and
-// starts a fresh one. It returns the new container ID.
+// Run removes any existing Miso-managed container with the same name, then
+// creates and starts a fresh one. It returns the new container ID. If a
+// container with that name exists but Miso does not manage it, Run refuses
+// rather than clobbering an unrelated container.
 func (c *Client) Run(ctx context.Context, spec RunSpec) (string, error) {
-	_ = c.Remove(ctx, spec.Name)
+	if info, err := c.cli.ContainerInspect(ctx, spec.Name); err == nil {
+		if info.Config == nil || info.Config.Labels["miso.managed"] != "true" {
+			return "", fmt.Errorf("%q adında, miso tarafından yönetilmeyen bir container zaten var", spec.Name)
+		}
+		_ = c.Remove(ctx, spec.Name)
+	} else if !cerrdefs.IsNotFound(err) {
+		return "", err
+	}
 
 	cfg := &container.Config{
 		Image:  spec.Image,
