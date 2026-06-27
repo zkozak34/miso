@@ -1,4 +1,3 @@
-// Package store persists projects, environments and applications in SQLite.
 package store
 
 import (
@@ -18,21 +17,18 @@ import (
 //go:embed schema.sql
 var schema string
 
-// ErrNotFound is returned when a requested row does not exist.
 var ErrNotFound = errors.New("not found")
 
-// Store wraps a SQLite database connection.
 type Store struct {
 	db *sql.DB
 }
 
-// Open opens (creating if needed) the SQLite database at path and applies the schema.
 func Open(path string) (*Store, error) {
 	db, err := sql.Open("sqlite", path+"?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)")
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(1) // SQLite: serialize writes, avoid "database is locked"
+	db.SetMaxOpenConns(1)
 	if _, err := db.Exec(schema); err != nil {
 		_ = db.Close()
 		return nil, fmt.Errorf("apply schema: %w", err)
@@ -40,7 +36,6 @@ func Open(path string) (*Store, error) {
 	return &Store{db: db}, nil
 }
 
-// Close closes the underlying database.
 func (s *Store) Close() error { return s.db.Close() }
 
 func newID() string {
@@ -50,8 +45,6 @@ func newID() string {
 }
 
 func now() int64 { return time.Now().UnixMilli() }
-
-// ---- Projects ----
 
 func (s *Store) ListProjects() ([]Project, error) {
 	const q = `
@@ -118,8 +111,6 @@ func (s *Store) UpdateProject(id, name, description string) (Project, error) {
 
 func (s *Store) DeleteProject(id string) error { return s.deleteByID("projects", id) }
 
-// ---- Environments ----
-
 func (s *Store) ListEnvironments(projectID string) ([]Environment, error) {
 	const q = `
 		SELECT e.id, e.project_id, p.name, e.name, e.created_at, e.updated_at,
@@ -165,7 +156,6 @@ func (s *Store) GetEnvironment(id string) (Environment, error) {
 }
 
 func (s *Store) CreateEnvironment(projectID, name string) (Environment, error) {
-	// Ensure the parent exists for a clean 404 rather than an FK error.
 	if _, err := s.GetProject(projectID); err != nil {
 		return Environment{}, err
 	}
@@ -179,8 +169,6 @@ func (s *Store) CreateEnvironment(projectID, name string) (Environment, error) {
 }
 
 func (s *Store) DeleteEnvironment(id string) error { return s.deleteByID("environments", id) }
-
-// ---- Applications ----
 
 func (s *Store) ListApplications(envID string) ([]Application, error) {
 	const q = `
@@ -231,7 +219,6 @@ func (s *Store) GetApplication(id string) (Application, error) {
 }
 
 func (s *Store) CreateApplication(envID string, in ApplicationInput) (Application, error) {
-	// Validate the parent environment exists for a clean 404.
 	if _, err := s.GetEnvironment(envID); err != nil {
 		return Application{}, err
 	}
@@ -273,8 +260,6 @@ func (s *Store) SetApplicationStatus(id, status string) (Application, error) {
 
 func (s *Store) DeleteApplication(id string) error { return s.deleteByID("applications", id) }
 
-// ---- helpers ----
-
 func (s *Store) deleteByID(table, id string) error {
 	res, err := s.db.Exec(`DELETE FROM `+table+` WHERE id = ?`, id)
 	if err != nil {
@@ -308,7 +293,6 @@ func decodeBuildArgs(s string) map[string]string {
 	return m
 }
 
-// normalizeArgs drops empty keys so blank build-arg rows from the UI are ignored.
 func normalizeArgs(in map[string]string) map[string]string {
 	out := map[string]string{}
 	for k, v := range in {

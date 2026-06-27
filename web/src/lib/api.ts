@@ -1,5 +1,3 @@
-// Shared types mirroring the Go API payloads, plus formatting helpers.
-
 export interface CPUStats {
   usedPercent: number
   perCore: number[]

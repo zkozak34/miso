@@ -9,11 +9,8 @@ interface Series {
 interface UsageAreaChartProps {
   data: Array<Record<string, number>>
   series: Series[]
-  /** When set, Y axis is fixed to [0, yMax] (e.g. 100 for percentages). */
   yMax?: number
-  /** Formats values in the tooltip. */
   format?: (value: number) => string
-  /** Compact sparkline mode: no axes, no tooltip, no grid. */
   compact?: boolean
   height?: number
 }

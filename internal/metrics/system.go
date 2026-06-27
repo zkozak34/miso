@@ -9,7 +9,6 @@ import (
 	"github.com/shirou/gopsutil/v4/mem"
 )
 
-// SystemInfo describes static-ish host information shown in the info panel.
 type SystemInfo struct {
 	Hostname        string `json:"hostname"`
 	OS              string `json:"os"`
@@ -17,7 +16,7 @@ type SystemInfo struct {
 	PlatformVersion string `json:"platformVersion"`
 	KernelVersion   string `json:"kernelVersion"`
 	KernelArch      string `json:"kernelArch"`
-	Uptime          uint64 `json:"uptime"` // seconds
+	Uptime          uint64 `json:"uptime"`
 	BootTime        uint64 `json:"bootTime"`
 	Procs           uint64 `json:"procs"`
 	CPUModel        string `json:"cpuModel"`
@@ -26,7 +25,6 @@ type SystemInfo struct {
 	GoVersion       string `json:"goVersion"`
 }
 
-// GetSystemInfo collects host metadata.
 func GetSystemInfo(ctx context.Context) (SystemInfo, error) {
 	info := SystemInfo{
 		KernelArch: runtime.GOARCH,

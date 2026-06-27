@@ -1,4 +1,3 @@
-// Package metrics collects system resource usage via gopsutil.
 package metrics
 
 import (
@@ -11,9 +10,8 @@ import (
 	"github.com/shirou/gopsutil/v4/net"
 )
 
-// Snapshot is a single point-in-time reading of system metrics.
 type Snapshot struct {
-	Timestamp int64       `json:"timestamp"` // unix milliseconds
+	Timestamp int64       `json:"timestamp"`
 	CPU       CPUStats    `json:"cpu"`
 	Memory    MemoryStats `json:"memory"`
 	Disks     []DiskStats `json:"disks"`
@@ -43,40 +41,30 @@ type DiskStats struct {
 }
 
 type NetStats struct {
-	BytesSent   uint64  `json:"bytesSent"`   // cumulative
-	BytesRecv   uint64  `json:"bytesRecv"`   // cumulative
-	SentPerSec  float64 `json:"sentPerSec"`  // bytes/sec since last sample
-	RecvPerSec  float64 `json:"recvPerSec"`  // bytes/sec since last sample
+	BytesSent  uint64  `json:"bytesSent"`
+	BytesRecv  uint64  `json:"bytesRecv"`
+	SentPerSec float64 `json:"sentPerSec"`
+	RecvPerSec float64 `json:"recvPerSec"`
 }
 
-// netSample holds the previous cumulative counters for rate computation.
 type netSample struct {
 	bytesSent uint64
 	bytesRecv uint64
 	at        time.Time
 }
 
-// Collector produces metric snapshots, computing rate-based fields (network
-// throughput) from the delta between consecutive Collect calls. It is not safe
-// for concurrent use; call it from a single goroutine (e.g. the SSE loop).
 type Collector struct {
 	prevNet *netSample
 }
 
-// NewCollector returns a Collector ready to produce snapshots.
 func NewCollector() *Collector {
 	return &Collector{}
 }
 
-// Collect gathers a fresh snapshot. CPU percentages are sampled non-blockingly
-// against the kernel's cumulative counters, so the first call after process
-// start reports cumulative-since-boot values; subsequent calls reflect the
-// window since the previous call.
 func (c *Collector) Collect(ctx context.Context) (Snapshot, error) {
 	now := time.Now()
 	s := Snapshot{Timestamp: now.UnixMilli()}
 
-	// CPU: non-blocking (interval=0) returns usage since the previous call.
 	if perCore, err := cpu.PercentWithContext(ctx, 0, true); err == nil {
 		s.CPU.PerCore = perCore
 		s.CPU.Cores = len(perCore)
@@ -101,8 +89,6 @@ func (c *Collector) Collect(ctx context.Context) (Snapshot, error) {
 	return s, nil
 }
 
-// pseudoFstypes are virtual/system filesystems we don't want cluttering the
-// disk panel.
 var pseudoFstypes = map[string]struct{}{
 	"devfs": {}, "tmpfs": {}, "devtmpfs": {}, "overlay": {},
 	"squashfs": {}, "proc": {}, "sysfs": {}, "autofs": {},
@@ -113,9 +99,6 @@ func collectDisks(ctx context.Context) []DiskStats {
 	if err != nil {
 		return nil
 	}
-	// Many systems (notably macOS APFS) expose one physical volume under several
-	// synthesized mountpoints with identical usage. Dedupe by total+used so each
-	// real volume shows once.
 	seen := make(map[[2]uint64]struct{}, len(parts))
 	out := make([]DiskStats, 0, len(parts))
 	for _, p := range parts {
@@ -144,7 +127,7 @@ func collectDisks(ctx context.Context) []DiskStats {
 
 func (c *Collector) collectNetwork(ctx context.Context, now time.Time) NetStats {
 	var ns NetStats
-	counters, err := net.IOCountersWithContext(ctx, false) // false => aggregated across all interfaces
+	counters, err := net.IOCountersWithContext(ctx, false)
 	if err != nil || len(counters) == 0 {
 		return ns
 	}
@@ -163,7 +146,6 @@ func (c *Collector) collectNetwork(ctx context.Context, now time.Time) NetStats 
 	return ns
 }
 
-// diff guards against counter resets (e.g. interface restart) producing huge values.
 func diff(cur, prev uint64) uint64 {
 	if cur < prev {
 		return 0

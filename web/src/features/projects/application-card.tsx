@@ -62,7 +62,12 @@ export function ApplicationCard({ app, to }: { app: Application; to: string }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => navigate(to)}>Aç</DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={() => setConfirmOpen(true)}>
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={() => {
+                  setTimeout(() => setConfirmOpen(true), 0)
+                }}
+              >
                 Sil
               </DropdownMenuItem>
             </DropdownMenuContent>

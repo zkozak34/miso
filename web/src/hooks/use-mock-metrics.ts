@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react"
 
 export interface MockPoint {
-  cpu: number // percent
-  memory: number // MB
-  netIn: number // KB/s
+  cpu: number
+  memory: number
+  netIn: number
 }
 
 const MAX = 40
@@ -13,11 +13,6 @@ function clamp(v: number, min: number, max: number) {
   return Math.max(min, Math.min(max, v))
 }
 
-/**
- * Phase-2 placeholder: synthesizes a rolling metric series client-side so the
- * application detail charts animate. Replaced by real container stats in Phase 3.
- * When `active` is false (app stopped) the series flattens to zero.
- */
 export function useMockMetrics(active: boolean): { latest: MockPoint; history: MockPoint[] } {
   const [history, setHistory] = useState<MockPoint[]>([])
   const ref = useRef<MockPoint>({ cpu: 2, memory: 180, netIn: 20 })
@@ -30,7 +25,6 @@ export function useMockMetrics(active: boolean): { latest: MockPoint; history: M
       return
     }
 
-    // Seed with a flat-ish history so the chart isn't empty on first paint.
     setHistory(Array.from({ length: MAX }, () => ref.current))
 
     const id = setInterval(() => {

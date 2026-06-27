@@ -20,7 +20,6 @@ func (s *Server) routes() http.Handler {
 		api.Get("/metrics", s.handleMetrics)
 		api.Handle("/metrics/stream", sse.NewHandler(2*time.Second))
 
-		// Projects → Environments → Applications
 		api.Route("/projects", func(r chi.Router) {
 			r.Get("/", s.handleListProjects)
 			r.Post("/", s.handleCreateProject)
@@ -39,11 +38,10 @@ func (s *Server) routes() http.Handler {
 		api.Route("/applications/{aid}", func(r chi.Router) {
 			r.Get("/", s.handleGetApplication)
 			r.Delete("/", s.handleDeleteApplication)
-			r.Post("/{action}", s.handleApplicationAction) // deploy | stop | restart
+			r.Post("/{action}", s.handleApplicationAction)
 		})
 	})
 
-	// Embedded SPA (and client-side routing fallback) for everything else.
 	if spa, err := spaHandler(); err == nil {
 		r.Handle("/*", spa)
 	}
@@ -76,14 +74,12 @@ func writeJSON(w http.ResponseWriter, v any) {
 	}
 }
 
-// writeStatus emits a JSON body with an explicit HTTP status code.
 func writeStatus(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-// writeError maps store errors to HTTP statuses and emits a JSON error body.
 func writeError(w http.ResponseWriter, err error) {
 	code := http.StatusInternalServerError
 	if errors.Is(err, store.ErrNotFound) {
@@ -92,7 +88,6 @@ func writeError(w http.ResponseWriter, err error) {
 	writeStatus(w, code, map[string]string{"error": err.Error()})
 }
 
-// decodeJSON reads a JSON request body into v, returning false (and a 400) on failure.
 func decodeJSON(w http.ResponseWriter, r *http.Request, v any) bool {
 	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
 		writeStatus(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})

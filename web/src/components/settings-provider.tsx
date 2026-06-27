@@ -1,11 +1,8 @@
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react"
 
 export interface Settings {
-  /** History points kept in charts (10–60). */
   chartPoints: number
-  /** Decimal places used when formatting sizes. */
   decimals: number
-  /** Whether per-core CPU bars are shown. */
   showPerCore: boolean
 }
 
@@ -28,9 +25,7 @@ function load(): Settings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) }
-  } catch {
-    // fall through to defaults
-  }
+  } catch {}
   return DEFAULT_SETTINGS
 }
 

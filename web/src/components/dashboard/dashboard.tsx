@@ -43,7 +43,6 @@ export function Dashboard({ latest, history }: DashboardProps) {
 
   return (
     <div className="space-y-4">
-      {/* KPI row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="CPU"
@@ -114,7 +113,6 @@ export function Dashboard({ latest, history }: DashboardProps) {
         </StatCard>
       </div>
 
-      {/* Charts row */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center gap-2 space-y-0">
@@ -152,12 +150,10 @@ export function Dashboard({ latest, history }: DashboardProps) {
         </Card>
       </div>
 
-      {/* Per-core (optional) */}
       {settings.showPerCore && latest && latest.cpu.perCore.length > 0 && (
         <PerCoreCard perCore={latest.cpu.perCore} />
       )}
 
-      {/* Disk + system info */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <DiskList disks={latest?.disks ?? []} />
         <SystemInfoCard />

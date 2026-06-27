@@ -52,8 +52,6 @@ func (s *Server) handleDeleteApplication(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// handleApplicationAction is a Phase-2 stub: it only updates the stored status.
-// Real Docker lifecycle actions arrive in Phase 3.
 func (s *Server) handleApplicationAction(w http.ResponseWriter, r *http.Request) {
 	var status string
 	switch chi.URLParam(r, "action") {

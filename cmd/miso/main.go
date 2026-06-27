@@ -1,5 +1,3 @@
-// Command miso runs the Docker management panel: a Go HTTP server that exposes
-// system-metrics APIs and serves the embedded web UI from a single binary.
 package main
 
 import (

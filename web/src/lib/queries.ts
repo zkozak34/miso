@@ -26,7 +26,6 @@ export const keys = {
   application: (id: string) => ["applications", id] as const,
 }
 
-// ---- System ----
 export function useSystemInfo() {
   return useQuery({
     queryKey: ["system-info"],
@@ -35,7 +34,6 @@ export function useSystemInfo() {
   })
 }
 
-// ---- Projects ----
 export function useProjects() {
   return useQuery({ queryKey: keys.projects, queryFn: listProjects })
 }
@@ -60,7 +58,6 @@ export function useDeleteProject() {
   })
 }
 
-// ---- Environments ----
 export function useEnvironments(projectId: string) {
   return useQuery({
     queryKey: keys.environments(projectId),
@@ -100,7 +97,6 @@ export function useDeleteEnvironment(projectId: string) {
   })
 }
 
-// ---- Applications ----
 export function useApplications(envId: string) {
   return useQuery({
     queryKey: keys.applications(envId),

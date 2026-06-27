@@ -8,10 +8,9 @@ interface StatCardProps {
   icon: LucideIcon
   value: ReactNode
   subtitle?: ReactNode
-  /** 0–100; renders an accent bar when provided. */
   percent?: number
-  accent?: string // CSS color, e.g. var(--chart-1)
-  children?: ReactNode // optional sparkline area
+  accent?: string
+  children?: ReactNode
 }
 
 export function StatCard({

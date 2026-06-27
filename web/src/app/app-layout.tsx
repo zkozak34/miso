@@ -97,7 +97,6 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Desktop sidebar */}
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-30 hidden flex-col border-r bg-surface-2 transition-[width] duration-200 md:flex",
@@ -129,7 +128,6 @@ export function AppLayout() {
         </div>
       </aside>
 
-      {/* Mobile drawer */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <button
@@ -155,7 +153,6 @@ export function AppLayout() {
         </div>
       )}
 
-      {/* Topbar */}
       <header
         className={cn(
           "sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-[var(--topbar)] px-4 backdrop-blur-md",
@@ -177,7 +174,6 @@ export function AppLayout() {
         </div>
       </header>
 
-      {/* Content */}
       <main className={mainPad}>
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <Outlet />

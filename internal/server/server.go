@@ -1,4 +1,3 @@
-// Package server wires the HTTP API and the embedded SPA into a single handler.
 package server
 
 import (
@@ -11,14 +10,12 @@ import (
 	"github.com/zeynelkozak/miso/internal/store"
 )
 
-// Server holds the HTTP router, data store and configuration.
 type Server struct {
 	router chi.Router
 	addr   string
 	store  *store.Store
 }
 
-// New creates a Server bound to addr (e.g. ":8080") backed by st.
 func New(addr string, st *store.Store) *Server {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -29,8 +26,6 @@ func New(addr string, st *store.Store) *Server {
 	return &Server{router: r, addr: addr, store: st}
 }
 
-// ListenAndServe builds the routes and starts the HTTP server, shutting down
-// gracefully when ctx is cancelled.
 func (s *Server) ListenAndServe(ctx context.Context) error {
 	srv := &http.Server{
 		Addr:              s.addr,

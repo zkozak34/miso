@@ -1,6 +1,17 @@
-import { Plus } from "lucide-react"
+import { Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { Link, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
+import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -14,13 +25,16 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { AddCard } from "@/features/projects/add-card"
 import { EnvironmentCard } from "@/features/projects/environment-card"
 import { NewEnvironmentDialog } from "@/features/projects/new-environment-dialog"
-import { useEnvironments, useProject } from "@/lib/queries"
+import { useDeleteProject, useEnvironments, useProject } from "@/lib/queries"
 
 export function ProjectPage() {
   const { projectId = "" } = useParams()
+  const navigate = useNavigate()
   const { data: project } = useProject(projectId)
   const { data: environments, isLoading } = useEnvironments(projectId)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const del = useDeleteProject()
 
   return (
     <div className="space-y-6">
@@ -49,9 +63,18 @@ export function ProjectPage() {
               : ""}
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4" /> Yeni environment
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="text-destructive hover:text-destructive"
+            onClick={() => setConfirmOpen(true)}
+          >
+            <Trash2 className="h-4 w-4" /> Sil
+          </Button>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4" /> Yeni environment
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -64,6 +87,35 @@ export function ProjectPage() {
       </div>
 
       <NewEnvironmentDialog projectId={projectId} open={dialogOpen} onOpenChange={setDialogOpen} />
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Projeyi sil?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-mono">{project?.name}</span> ve içindeki tüm environment'lar (
+              {project?.environmentCount ?? 0}) ile uygulamalar ({project?.appCount ?? 0}) kalıcı
+              olarak silinecek. Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                del.mutate(projectId, {
+                  onSuccess: () => {
+                    toast.success("Proje silindi")
+                    navigate("/projects")
+                  },
+                  onError: (e) => toast.error(e.message),
+                })
+              }
+            >
+              Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -1,5 +1,3 @@
-// Typed client for the projects/environments/applications REST API.
-
 export type ResourceStatus = "running" | "building" | "failed" | "stopped"
 
 export interface Project {
@@ -69,16 +67,13 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
     try {
       const body = await res.json()
       if (body?.error) message = body.error
-    } catch {
-      // non-JSON error body
-    }
+    } catch {}
     throw new Error(message)
   }
   if (res.status === 204) return undefined as T
   return res.json()
 }
 
-// Projects
 export const listProjects = () => request<Project[]>("/api/projects")
 export const getProject = (id: string) => request<Project>(`/api/projects/${id}`)
 export const createProject = (input: { name: string; description?: string }) =>
@@ -86,7 +81,6 @@ export const createProject = (input: { name: string; description?: string }) =>
 export const deleteProject = (id: string) =>
   request<void>(`/api/projects/${id}`, { method: "DELETE" })
 
-// Environments
 export const listEnvironments = (projectId: string) =>
   request<Environment[]>(`/api/projects/${projectId}/environments`)
 export const getEnvironment = (id: string) => request<Environment>(`/api/environments/${id}`)
@@ -98,7 +92,6 @@ export const createEnvironment = (projectId: string, name: string) =>
 export const deleteEnvironment = (id: string) =>
   request<void>(`/api/environments/${id}`, { method: "DELETE" })
 
-// Applications
 export const listApplications = (envId: string) =>
   request<Application[]>(`/api/environments/${envId}/applications`)
 export const getApplication = (id: string) => request<Application>(`/api/applications/${id}`)
