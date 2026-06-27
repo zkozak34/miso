@@ -42,6 +42,7 @@ func (s *Server) routes() http.Handler {
 			r.Get("/", s.handleGetApplication)
 			r.Patch("/", s.handleUpdateApplication)
 			r.Put("/env", s.handleUpdateApplicationEnv)
+			r.Put("/auth-token", s.handleUpdateApplicationAuthToken)
 			r.Delete("/", s.handleDeleteApplication)
 			r.Get("/logs", s.handleApplicationLogs)
 			r.Get("/logs/stream", s.handleApplicationLogStream)

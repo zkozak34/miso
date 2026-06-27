@@ -337,6 +337,19 @@ func (s *Store) UpdateApplicationEnv(id string, vars []EnvVar) (Application, err
 	return s.GetApplication(id)
 }
 
+// UpdateApplicationAuthToken replaces (or, with an empty token, clears) the
+// repository auth token. It applies on the next deploy.
+func (s *Store) UpdateApplicationAuthToken(id, token string) (Application, error) {
+	res, err := s.db.Exec(`UPDATE applications SET auth_token = ?, updated_at = ? WHERE id = ?`, token, now(), id)
+	if err != nil {
+		return Application{}, err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return Application{}, ErrNotFound
+	}
+	return s.GetApplication(id)
+}
+
 // ApplicationAuthToken returns the raw (unmasked) auth token for build use.
 func (s *Store) ApplicationAuthToken(id string) (string, error) {
 	var token string

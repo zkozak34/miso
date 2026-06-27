@@ -24,6 +24,7 @@ import {
   regenerateWebhook,
   type UpdateApplicationInput,
   updateApplication,
+  updateApplicationAuthToken,
   updateApplicationEnv,
 } from "@/lib/api/resources"
 
@@ -223,6 +224,17 @@ export function useUpdateApplicationEnv(id: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (envVars: EnvVar[]) => updateApplicationEnv(id, envVars),
+    onSuccess: (app) => {
+      qc.setQueryData(keys.application(id), app)
+      qc.invalidateQueries({ queryKey: keys.applications(app.environmentId) })
+    },
+  })
+}
+
+export function useUpdateApplicationAuthToken(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (authToken: string) => updateApplicationAuthToken(id, authToken),
     onSuccess: (app) => {
       qc.setQueryData(keys.application(id), app)
       qc.invalidateQueries({ queryKey: keys.applications(app.environmentId) })

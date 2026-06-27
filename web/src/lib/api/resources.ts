@@ -187,6 +187,11 @@ export const updateApplicationEnv = (id: string, envVars: EnvVar[]) =>
     method: "PUT",
     body: JSON.stringify({ envVars }),
   })
+export const updateApplicationAuthToken = (id: string, authToken: string) =>
+  request<Application>(`/api/applications/${id}/auth-token`, {
+    method: "PUT",
+    body: JSON.stringify({ authToken }),
+  })
 export const deleteApplication = (id: string) =>
   request<void>(`/api/applications/${id}`, { method: "DELETE" })
 export const applicationAction = (id: string, action: "deploy" | "stop" | "restart") =>

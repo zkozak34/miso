@@ -121,6 +121,21 @@ func (s *Server) handleUpdateApplicationEnv(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, a)
 }
 
+func (s *Server) handleUpdateApplicationAuthToken(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		AuthToken string `json:"authToken"`
+	}
+	if !decodeJSON(w, r, &in) {
+		return
+	}
+	a, err := s.store.UpdateApplicationAuthToken(chi.URLParam(r, "aid"), strings.TrimSpace(in.AuthToken))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, a)
+}
+
 func (s *Server) handleDeleteApplication(w http.ResponseWriter, r *http.Request) {
 	aid := chi.URLParam(r, "aid")
 	if s.docker != nil {
