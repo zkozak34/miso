@@ -156,10 +156,7 @@ export function ApplicationPage() {
 }
 
 function Header({ app }: { app: Application }) {
-  const navigate = useNavigate()
   const action = useApplicationAction(app.id)
-  const del = useDeleteApplication(app.environmentId)
-  const [confirmOpen, setConfirmOpen] = useState(false)
   const run = (a: "deploy" | "stop" | "restart", label: string) =>
     action.mutate(a, {
       onSuccess: () => toast.success(label),
@@ -196,45 +193,7 @@ function Header({ app }: { app: Application }) {
         <Button disabled={action.isPending} onClick={() => run("deploy", "Dağıtım başlatıldı")}>
           <Play className="h-4 w-4" /> Deploy
         </Button>
-        <Button
-          variant="outline"
-          className="text-destructive hover:text-destructive"
-          disabled={del.isPending}
-          onClick={() => setConfirmOpen(true)}
-        >
-          <Trash2 className="h-4 w-4" /> Sil
-        </Button>
       </div>
-
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Uygulamayı sil?</AlertDialogTitle>
-            <AlertDialogDescription>
-              <span className="font-mono">{app.name}</span> ve çalışan container'ı kalıcı olarak
-              silinecek. Bu işlem geri alınamaz.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() =>
-                del.mutate(app.id, {
-                  onSuccess: () => {
-                    toast.success("Uygulama silindi")
-                    navigate(`/projects/${app.projectId}/environments/${app.environmentId}`, {
-                      replace: true,
-                    })
-                  },
-                  onError: (e) => toast.error(e.message),
-                })
-              }
-            >
-              Sil
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
@@ -566,7 +525,7 @@ function Settings({ app }: { app: Application }) {
       </div>
 
       <Card className="border-destructive/40 bg-destructive/5">
-        <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6">
+        <CardContent className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm font-medium text-destructive">Uygulamayı kaldır</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
