@@ -8,23 +8,25 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/zeynelkozak/miso/internal/store"
 )
 
-// Server holds the HTTP router and configuration.
+// Server holds the HTTP router, data store and configuration.
 type Server struct {
 	router chi.Router
 	addr   string
+	store  *store.Store
 }
 
-// New creates a Server bound to addr (e.g. ":8080").
-func New(addr string) *Server {
+// New creates a Server bound to addr (e.g. ":8080") backed by st.
+func New(addr string, st *store.Store) *Server {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Compress(5))
 
-	return &Server{router: r, addr: addr}
+	return &Server{router: r, addr: addr, store: st}
 }
 
 // ListenAndServe builds the routes and starts the HTTP server, shutting down

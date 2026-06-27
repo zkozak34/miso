@@ -4,16 +4,22 @@ Düşük kaynak tüketen, yüksek verimli bir **Docker yönetim paneli**. Go bac
 React tabanlı UI tek binary'ye gömülür — `make build` ile çıkan **tek çıktı** hem API'yı hem UI'ı
 servis eder.
 
-> **Faz 1 (mevcut):** Sistem kaynak kullanımı dashboard'u — CPU, RAM, disk, network canlı
-> metrikleri (SSE) + sistem bilgisi paneli. Docker container yönetimi sonraki fazlarda.
+> **Faz 1:** Sistem kaynak dashboard'u — CPU, RAM, disk, network canlı metrikleri (SSE) + sistem bilgisi.
+>
+> **Faz 2 (mevcut):** Proje → Environment → Uygulama yönetimi. Projeler oluştur, environment'lara
+> (production/staging…) böl, environment'lara Git üzerinden uygulama ekle, uygulama detayını gör.
+> Veriler SQLite'ta kalıcı. _Gerçek Docker bağlantısı Faz 3'te_ — bu fazda uygulama durumları
+> saklanan alanlar, detay metrikleri mock, Stop/Restart/Deploy butonları durumu değiştiren stub'lar.
 
 ## Teknolojiler
 
 | Katman | Seçim |
 | --- | --- |
 | Backend | Go · `net/http` + [chi](https://github.com/go-chi/chi) · [gopsutil](https://github.com/shirou/gopsutil) |
+| Veritabanı | [SQLite](https://modernc.org/sqlite) (pure-Go, cgo yok) — `miso.db` |
 | Canlı veri | Server-Sent Events (SSE) |
 | UI | React + TypeScript + Vite (SPA) |
+| Yönlendirme/durum | react-router-dom · TanStack Query |
 | Bileşenler | shadcn/ui (new-york) · Tailwind CSS v4 · Recharts |
 | Form/validasyon | react-hook-form + zod |
 | Paket yöneticisi | yarn |
@@ -46,20 +52,32 @@ cd web && yarn dev       # UI
 
 ```bash
 make build      # web/dist'i derler, internal/server/dist'e gömer, bin/miso üretir
-./bin/miso      # http://localhost:8080
-./bin/miso --addr :9000   # özel adres
+./bin/miso      # http://localhost:8080  (db: ./miso.db)
+./bin/miso --addr :9000 --db /var/lib/miso.db   # özel adres ve DB yolu
 ```
 
 `make build` adımları: `yarn build` → `web/dist`'i `internal/server/dist`'e kopyala →
-`go build` (`go:embed` ile UI binary'ye gömülür).
+`go build` (`go:embed` ile UI binary'ye gömülür). SQLite veritabanı ilk çalıştırmada otomatik oluşur.
 
 ## API
 
+### Sistem (Faz 1)
 | Method | Path | Açıklama |
 | --- | --- | --- |
 | GET | `/api/system/info` | Host bilgisi (OS, kernel, CPU, RAM, uptime…) |
 | GET | `/api/metrics` | Anlık metrik snapshot'ı |
 | GET | `/api/metrics/stream` | SSE — ~2 sn aralıkla canlı metrik akışı |
+
+### Kaynak yönetimi (Faz 2)
+| Method | Path | Açıklama |
+| --- | --- | --- |
+| GET/POST | `/api/projects` | projeleri listele (sayım+durum) / oluştur |
+| GET/PATCH/DELETE | `/api/projects/{pid}` | tekil proje |
+| GET/POST | `/api/projects/{pid}/environments` | environment listele / oluştur |
+| GET/DELETE | `/api/environments/{eid}` | tekil environment |
+| GET/POST | `/api/environments/{eid}/applications` | uygulama listele / oluştur |
+| GET/DELETE | `/api/applications/{aid}` | tekil uygulama |
+| POST | `/api/applications/{aid}/{deploy\|stop\|restart}` | durum aksiyonu (Faz 2'de stub) |
 
 ## Komutlar
 
@@ -74,10 +92,15 @@ make tidy     # go mod tidy
 ## Proje Yapısı
 
 ```
-cmd/miso/            # entrypoint
+cmd/miso/            # entrypoint (--addr, --db)
 internal/
   metrics/           # gopsutil collector + sistem bilgisi
   sse/               # SSE handler
-  server/            # chi router + go:embed SPA
+  store/             # SQLite store (projects/environments/applications)
+  server/            # chi router + CRUD handlers + go:embed SPA
 web/                 # Vite + React SPA
+  src/app/           # sidebar layout
+  src/pages/         # dashboard, projects, project, environment, application
+  src/features/      # kartlar + dialog'lar
+  src/lib/           # API client + react-query hook'ları
 ```

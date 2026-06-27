@@ -10,17 +10,25 @@ import (
 	"syscall"
 
 	"github.com/zeynelkozak/miso/internal/server"
+	"github.com/zeynelkozak/miso/internal/store"
 )
 
 func main() {
 	addr := flag.String("addr", ":8080", "HTTP listen address")
+	dbPath := flag.String("db", "miso.db", "SQLite database path")
 	flag.Parse()
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	log.Printf("miso listening on %s", *addr)
-	if err := server.New(*addr).ListenAndServe(ctx); err != nil {
+	st, err := store.Open(*dbPath)
+	if err != nil {
+		log.Fatalf("open database: %v", err)
+	}
+	defer st.Close()
+
+	log.Printf("miso listening on %s (db: %s)", *addr, *dbPath)
+	if err := server.New(*addr, st).ListenAndServe(ctx); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 }

@@ -1,0 +1,69 @@
+import { Plus } from "lucide-react"
+import { useState } from "react"
+import { Link, useParams } from "react-router-dom"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { AddCard } from "@/features/projects/add-card"
+import { EnvironmentCard } from "@/features/projects/environment-card"
+import { NewEnvironmentDialog } from "@/features/projects/new-environment-dialog"
+import { useEnvironments, useProject } from "@/lib/queries"
+
+export function ProjectPage() {
+  const { projectId = "" } = useParams()
+  const { data: project } = useProject(projectId)
+  const { data: environments, isLoading } = useEnvironments(projectId)
+  const [dialogOpen, setDialogOpen] = useState(false)
+
+  return (
+    <div className="space-y-6">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/projects">Projeler</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="font-mono">{project?.name ?? "…"}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-mono text-2xl font-semibold tracking-tight">
+            {project?.name ?? "…"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {project
+              ? `${project.environmentCount} environment · ${project.appCount} uygulama`
+              : ""}
+          </p>
+        </div>
+        <Button onClick={() => setDialogOpen(true)}>
+          <Plus className="h-4 w-4" /> Yeni environment
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {isLoading
+          ? Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="h-[104px] rounded-xl" />
+            ))
+          : environments?.map((e) => <EnvironmentCard key={e.id} environment={e} />)}
+        {!isLoading && <AddCard label="Yeni environment" onClick={() => setDialogOpen(true)} />}
+      </div>
+
+      <NewEnvironmentDialog projectId={projectId} open={dialogOpen} onOpenChange={setDialogOpen} />
+    </div>
+  )
+}

@@ -49,7 +49,8 @@
             "noDangerouslySetInnerHtml": "off"
           },
           "a11y": {
-            "useSemanticElements": "off"
+            "useSemanticElements": "off",
+            "useFocusableInteractive": "off"
           }
         }
       }
