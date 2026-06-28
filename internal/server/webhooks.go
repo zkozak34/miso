@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -69,6 +70,12 @@ func (s *Server) handlePushEvent(w http.ResponseWriter, app store.Application, b
 		return
 	}
 	if _, err := s.startDeploy(app, "push · "+branch); err != nil {
+		// A push arriving mid-build is benign: acknowledge it without a 5xx so
+		// GitHub doesn't flag the delivery as failed.
+		if errors.Is(err, errDeployInProgress) {
+			writeJSON(w, map[string]any{"ignored": true, "reason": "deploy in progress"})
+			return
+		}
 		writeStatus(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}

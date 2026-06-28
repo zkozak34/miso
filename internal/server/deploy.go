@@ -50,6 +50,14 @@ func (s *Server) getBuildLog(appID string) *buildLog {
 	return s.buildLogs[appID]
 }
 
+// removeBuildLog drops a captured build log, freeing its buffer. Called when an
+// application is deleted so stale logs don't linger in memory.
+func (s *Server) removeBuildLog(appID string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.buildLogs, appID)
+}
+
 func (s *Server) handleApplicationAction(w http.ResponseWriter, r *http.Request) {
 	aid := chi.URLParam(r, "aid")
 	action := chi.URLParam(r, "action")
@@ -88,11 +96,19 @@ var (
 	errDeployNoRepo  = errors.New("repository URL gerekli")
 )
 
+// errDeployInProgress is returned when a deploy is requested while one is
+// already building, mapped to HTTP 409 by callers.
+var errDeployInProgress = errors.New("dağıtım zaten sürüyor")
+
 func (s *Server) deploy(w http.ResponseWriter, app store.Application) {
 	a, err := s.startDeploy(app, "manual")
 	if err != nil {
 		if errors.Is(err, errDeployNoImage) || errors.Is(err, errDeployNoRepo) {
 			writeStatus(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, errDeployInProgress) {
+			writeStatus(w, http.StatusConflict, map[string]string{"error": err.Error()})
 			return
 		}
 		writeError(w, err)
@@ -106,6 +122,12 @@ func (s *Server) deploy(w http.ResponseWriter, app store.Application) {
 // async build/pull+run. It returns the updated application. The caller must
 // ensure Docker is available before calling.
 func (s *Server) startDeploy(app store.Application, trigger string) (store.Application, error) {
+	// Refuse to start a second build while one is already in flight for this app;
+	// two concurrent builds would race over the same container name.
+	if app.Status == store.StatusBuilding {
+		return store.Application{}, errDeployInProgress
+	}
+
 	imageSource := isImageSource(app)
 	if imageSource {
 		if strings.TrimSpace(app.Image) == "" {

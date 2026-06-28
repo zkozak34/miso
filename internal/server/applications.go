@@ -26,6 +26,7 @@ func (s *Server) handleListApplications(w http.ResponseWriter, r *http.Request) 
 		writeError(w, err)
 		return
 	}
+	s.reconcileStatuses(r.Context(), apps)
 	writeJSON(w, apps)
 }
 
@@ -86,6 +87,7 @@ func (s *Server) handleGetApplication(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
+	a = s.reconcileStatus(r.Context(), a)
 	writeJSON(w, a)
 }
 
@@ -149,5 +151,6 @@ func (s *Server) handleDeleteApplication(w http.ResponseWriter, r *http.Request)
 		writeError(w, err)
 		return
 	}
+	s.removeBuildLog(aid)
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -81,8 +81,8 @@ type Deployment struct {
 	Trigger       string `json:"trigger"` // manual (future: push · <branch>)
 	Error         string `json:"error,omitempty"`
 	StartedAt     int64  `json:"startedAt"`
-	FinishedAt    int64  `json:"finishedAt"`        // 0 while still building
-	DurationMs    int64  `json:"durationMs"`        // finishedAt-startedAt, 0 if unfinished
+	FinishedAt    int64  `json:"finishedAt"` // 0 while still building
+	DurationMs    int64  `json:"durationMs"` // finishedAt-startedAt, 0 if unfinished
 }
 
 // EnvVar is a runtime environment variable injected into the container. Secret
