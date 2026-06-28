@@ -1,96 +1,37 @@
-import { ModeToggle } from "@/components/mode-toggle";
-import { useSystemInfo } from "@/lib/queries";
-import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
-import { FolderGit2, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
-
-interface NavItem {
-  to: string;
-  label: string;
-  icon: LucideIcon;
-}
-
-const NAV: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/projects", label: "Projeler", icon: FolderGit2 },
-];
-
-function Logo({ showText }: { showText: boolean }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <div className="flex h-7 w-7 flex-none items-center justify-center rounded-[7px] bg-linear-to-br from-[#fb923c] to-[#e0651f] font-mono text-[15px] font-bold text-[#08080a]">
-        M
-      </div>
-      {showText && <span className="text-[15px] font-semibold tracking-tight whitespace-nowrap">Miso</span>}
-    </div>
-  );
-}
-
-function NavItems({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
-  return (
-    <nav className="flex flex-1 flex-col gap-0.5 p-2.5">
-      {NAV.map(({ to, label, icon: Icon }) => (
-        <NavLink
-          key={to}
-          to={to}
-          onClick={onNavigate}
-          title={label}
-          className={({ isActive }) =>
-            cn(
-              "relative flex h-9.5 items-center gap-3 rounded-lg px-3 text-[13.5px] transition-colors",
-              collapsed && "justify-center px-0",
-              isActive ? "bg-accent font-semibold text-foreground" : "font-medium text-muted-foreground hover:bg-accent/60 hover:text-foreground",
-            )
-          }
-        >
-          {({ isActive }) => (
-            <>
-              {isActive && <span className="absolute -left-2.5 top-2 bottom-2 w-[2.5px] rounded-full bg-primary" />}
-              <Icon className="h-4.5 w-4.5 flex-none" />
-              {!collapsed && <span className="whitespace-nowrap">{label}</span>}
-            </>
-          )}
-        </NavLink>
-      ))}
-    </nav>
-  );
-}
-
-function HostHealthChip() {
-  const { data } = useSystemInfo();
-  const host = data?.hostname ?? "node";
-  return (
-    <div className="flex h-7.5 items-center gap-2 rounded-[7px] border bg-card px-2.5">
-      <span className="relative flex h-1.75 w-1.75 flex-none">
-        <span className="absolute inset-0 rounded-full bg-emerald-400" />
-        <span className="absolute inset-0 rounded-full bg-emerald-400" style={{ animation: "ringPulse 2.4s ease-out infinite" }} />
-      </span>
-      <span className="font-mono text-xs text-muted-foreground">{host}</span>
-      <span className="text-[11.5px] font-medium text-emerald-400">Healthy</span>
-    </div>
-  );
-}
+import { Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Outlet } from "react-router-dom"
+import { ModeToggle } from "@/components/mode-toggle"
+import { cn } from "@/lib/utils"
+import { HostHealthChip } from "./host-health-chip"
+import { SidebarLogo } from "./sidebar-logo"
+import { SidebarNav } from "./sidebar-nav"
 
 export function AppLayout() {
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("miso.sidebar-collapsed") === "1");
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem("miso.sidebar-collapsed") === "1",
+  )
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
-    localStorage.setItem("miso.sidebar-collapsed", collapsed ? "1" : "0");
-  }, [collapsed]);
+    localStorage.setItem("miso.sidebar-collapsed", collapsed ? "1" : "0")
+  }, [collapsed])
 
-  const sidebarWidth = collapsed ? "w-15.5" : "w-58";
-  const mainPad = collapsed ? "md:pl-15.5" : "md:pl-58";
+  const sidebarWidth = collapsed ? "w-15.5" : "w-58"
+  const mainPad = collapsed ? "md:pl-15.5" : "md:pl-58"
 
   return (
     <div className="min-h-screen bg-background">
-      <aside className={cn("fixed inset-y-0 left-0 z-30 hidden flex-col border-r bg-surface-2 transition-[width] duration-200 md:flex", sidebarWidth)}>
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-30 hidden flex-col border-r bg-surface-2 transition-[width] duration-200 md:flex",
+          sidebarWidth,
+        )}
+      >
         <div className="flex h-14 flex-none items-center border-b px-4">
-          <Logo showText={!collapsed} />
+          <SidebarLogo showText={!collapsed} />
         </div>
-        <NavItems collapsed={collapsed} />
+        <SidebarNav collapsed={collapsed} />
         <div className="flex-none border-t p-2.5">
           <button
             type="button"
@@ -114,20 +55,35 @@ export function AppLayout() {
 
       {drawerOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <button type="button" aria-label="Menüyü kapat" className="absolute inset-0 bg-(--scrim)" onClick={() => setDrawerOpen(false)} />
+          <button
+            type="button"
+            aria-label="Menüyü kapat"
+            className="absolute inset-0 bg-(--scrim)"
+            onClick={() => setDrawerOpen(false)}
+          />
           <aside className="relative flex h-full w-65.5 flex-col border-r bg-surface-2">
             <div className="flex h-14 flex-none items-center justify-between border-b px-4">
-              <Logo showText />
-              <button type="button" aria-label="Kapat" onClick={() => setDrawerOpen(false)} className="text-muted-foreground hover:text-foreground">
+              <SidebarLogo showText />
+              <button
+                type="button"
+                aria-label="Kapat"
+                onClick={() => setDrawerOpen(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <NavItems collapsed={false} onNavigate={() => setDrawerOpen(false)} />
+            <SidebarNav collapsed={false} onNavigate={() => setDrawerOpen(false)} />
           </aside>
         </div>
       )}
 
-      <header className={cn("sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-(--topbar) px-4 backdrop-blur-md", mainPad)}>
+      <header
+        className={cn(
+          "sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-(--topbar) px-4 backdrop-blur-md",
+          mainPad,
+        )}
+      >
         <button
           type="button"
           aria-label="Menü"
@@ -149,5 +105,5 @@ export function AppLayout() {
         </div>
       </main>
     </div>
-  );
+  )
 }

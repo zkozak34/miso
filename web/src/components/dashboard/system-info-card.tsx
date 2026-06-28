@@ -3,15 +3,7 @@ import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { fetchSystemInfo, formatBytes, formatUptime, type SystemInfo } from "@/lib/api"
-
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4 py-1.5 border-b border-border/50 last:border-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium text-right tabular-nums">{value}</span>
-    </div>
-  )
-}
+import { InfoRow } from "./info-row"
 
 export function SystemInfoCard() {
   const [info, setInfo] = useState<SystemInfo | null>(null)
@@ -38,8 +30,8 @@ export function SystemInfoCard() {
         {!info && !error && <p className="text-sm text-muted-foreground">Yükleniyor…</p>}
         {info && (
           <div className="flex flex-col">
-            <Row label="Hostname" value={info.hostname} />
-            <Row
+            <InfoRow label="Hostname" value={info.hostname} />
+            <InfoRow
               label="İşletim Sistemi"
               value={
                 <span className="inline-flex items-center gap-2">
@@ -48,13 +40,13 @@ export function SystemInfoCard() {
                 </span>
               }
             />
-            <Row label="Kernel" value={info.kernelVersion} />
-            <Row label="İşlemci" value={info.cpuModel || "—"} />
-            <Row label="Çekirdek" value={`${info.cpuCores} çekirdek`} />
-            <Row label="Toplam RAM" value={formatBytes(info.totalMemory)} />
-            <Row label="Çalışma Süresi" value={formatUptime(info.uptime)} />
-            <Row label="Süreç Sayısı" value={info.procs} />
-            <Row label="Go" value={info.goVersion} />
+            <InfoRow label="Kernel" value={info.kernelVersion} />
+            <InfoRow label="İşlemci" value={info.cpuModel || "—"} />
+            <InfoRow label="Çekirdek" value={`${info.cpuCores} çekirdek`} />
+            <InfoRow label="Toplam RAM" value={formatBytes(info.totalMemory)} />
+            <InfoRow label="Çalışma Süresi" value={formatUptime(info.uptime)} />
+            <InfoRow label="Süreç Sayısı" value={info.procs} />
+            <InfoRow label="Go" value={info.goVersion} />
           </div>
         )}
       </CardContent>
