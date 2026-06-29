@@ -1,15 +1,12 @@
 package server
 
 import (
-	"encoding/json"
-	"errors"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zeynelkozak/miso/internal/metrics"
 	"github.com/zeynelkozak/miso/internal/sse"
-	"github.com/zeynelkozak/miso/internal/store"
 )
 
 func (s *Server) routes() http.Handler {
@@ -65,7 +62,7 @@ func (s *Server) routes() http.Handler {
 func (s *Server) handleSystemInfo(w http.ResponseWriter, r *http.Request) {
 	info, err := metrics.GetSystemInfo(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeErrorMsg(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	writeJSON(w, info)
@@ -74,37 +71,8 @@ func (s *Server) handleSystemInfo(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	snap, err := metrics.NewCollector().Collect(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeErrorMsg(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	writeJSON(w, snap)
-}
-
-func writeJSON(w http.ResponseWriter, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(v); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func writeStatus(w http.ResponseWriter, code int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(v)
-}
-
-func writeError(w http.ResponseWriter, err error) {
-	code := http.StatusInternalServerError
-	if errors.Is(err, store.ErrNotFound) {
-		code = http.StatusNotFound
-	}
-	writeStatus(w, code, map[string]string{"error": err.Error()})
-}
-
-func decodeJSON(w http.ResponseWriter, r *http.Request, v any) bool {
-	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
-		writeStatus(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
-		return false
-	}
-	return true
 }

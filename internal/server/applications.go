@@ -45,7 +45,7 @@ func (s *Server) handleCreateApplication(w http.ResponseWriter, r *http.Request)
 	}
 	in := req.ApplicationInput
 	if strings.TrimSpace(in.Name) == "" {
-		writeStatus(w, http.StatusBadRequest, map[string]string{"error": "name is required"})
+		writeErrorMsg(w, http.StatusBadRequest, "name is required")
 		return
 	}
 	in.Name = strings.TrimSpace(in.Name)
@@ -55,7 +55,7 @@ func (s *Server) handleCreateApplication(w http.ResponseWriter, r *http.Request)
 	if in.SourceType == "template" {
 		res, err := templates.Resolve(in.TemplateID, req.TemplateValues)
 		if err != nil {
-			writeStatus(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			writeErrorMsg(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		in.Image = res.Image
@@ -69,7 +69,7 @@ func (s *Server) handleCreateApplication(w http.ResponseWriter, r *http.Request)
 		writeError(w, err)
 		return
 	}
-	writeStatus(w, http.StatusCreated, a)
+	writeCreated(w, a)
 }
 
 // toStoreEnv converts resolved template env vars into the store's type.
@@ -97,7 +97,7 @@ func (s *Server) handleUpdateApplication(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if in.RestartPolicy != "" && !store.ValidRestartPolicy(in.RestartPolicy) {
-		writeStatus(w, http.StatusBadRequest, map[string]string{"error": "geçersiz restart policy"})
+		writeErrorMsg(w, http.StatusBadRequest, "geçersiz restart policy")
 		return
 	}
 	a, err := s.store.UpdateApplicationSettings(chi.URLParam(r, "aid"), in)
@@ -152,5 +152,5 @@ func (s *Server) handleDeleteApplication(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	s.removeBuildLog(aid)
-	w.WriteHeader(http.StatusNoContent)
+	writeJSON(w, nil)
 }

@@ -132,6 +132,14 @@ export interface AppStats {
   netTxBytes: number
 }
 
+// ApiResponse is the envelope every JSON endpoint returns: a success flag, the
+// payload in data, and a human-readable error message when success is false.
+export interface ApiResponse<T> {
+  success: boolean
+  data: T
+  error: string
+}
+
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...init,
@@ -140,13 +148,14 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     let message = `${res.status} ${res.statusText}`
     try {
-      const body = await res.json()
+      const body = (await res.json()) as ApiResponse<unknown>
       if (body?.error) message = body.error
     } catch {}
     throw new Error(message)
   }
   if (res.status === 204) return undefined as T
-  return res.json()
+  const body = (await res.json()) as ApiResponse<T>
+  return body.data
 }
 
 export const listTemplates = () => request<Template[]>("/api/templates")

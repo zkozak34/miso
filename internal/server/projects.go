@@ -29,7 +29,7 @@ func (s *Server) handleCreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if strings.TrimSpace(in.Name) == "" {
-		writeStatus(w, http.StatusBadRequest, map[string]string{"error": "name is required"})
+		writeErrorMsg(w, http.StatusBadRequest, "name is required")
 		return
 	}
 	p, err := s.store.CreateProject(strings.TrimSpace(in.Name), strings.TrimSpace(in.Description))
@@ -37,7 +37,7 @@ func (s *Server) handleCreateProject(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	writeStatus(w, http.StatusCreated, p)
+	writeCreated(w, p)
 }
 
 func (s *Server) handleGetProject(w http.ResponseWriter, r *http.Request) {
@@ -73,5 +73,5 @@ func (s *Server) handleDeleteProject(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	writeJSON(w, nil)
 }

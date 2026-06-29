@@ -33,7 +33,7 @@ func (s *Server) handleCreateEnvironment(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if strings.TrimSpace(in.Name) == "" {
-		writeStatus(w, http.StatusBadRequest, map[string]string{"error": "name is required"})
+		writeErrorMsg(w, http.StatusBadRequest, "name is required")
 		return
 	}
 	e, err := s.store.CreateEnvironment(chi.URLParam(r, "pid"), strings.TrimSpace(in.Name))
@@ -41,7 +41,7 @@ func (s *Server) handleCreateEnvironment(w http.ResponseWriter, r *http.Request)
 		writeError(w, err)
 		return
 	}
-	writeStatus(w, http.StatusCreated, e)
+	writeCreated(w, e)
 }
 
 func (s *Server) handleGetEnvironment(w http.ResponseWriter, r *http.Request) {
@@ -66,5 +66,5 @@ func (s *Server) handleDeleteEnvironment(w http.ResponseWriter, r *http.Request)
 		writeError(w, err)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	writeJSON(w, nil)
 }

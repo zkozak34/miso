@@ -54,7 +54,8 @@ export interface SystemInfo {
 export async function fetchSystemInfo(signal?: AbortSignal): Promise<SystemInfo> {
   const res = await fetch("/api/system/info", { signal })
   if (!res.ok) throw new Error(`system info: ${res.status}`)
-  return res.json()
+  const body = (await res.json()) as { data: SystemInfo }
+  return body.data
 }
 
 const UNITS = ["B", "KB", "MB", "GB", "TB", "PB"]

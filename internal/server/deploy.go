@@ -68,7 +68,7 @@ func (s *Server) handleApplicationAction(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if s.docker == nil {
-		writeStatus(w, http.StatusServiceUnavailable, map[string]string{"error": "Docker daemon erişilemiyor"})
+		writeErrorMsg(w, http.StatusServiceUnavailable, "Docker daemon erişilemiyor")
 		return
 	}
 
@@ -80,7 +80,7 @@ func (s *Server) handleApplicationAction(w http.ResponseWriter, r *http.Request)
 	case "restart":
 		s.restartApp(w, app)
 	default:
-		writeStatus(w, http.StatusBadRequest, map[string]string{"error": "unknown action"})
+		writeErrorMsg(w, http.StatusBadRequest, "unknown action")
 	}
 }
 
@@ -104,11 +104,11 @@ func (s *Server) deploy(w http.ResponseWriter, app store.Application) {
 	a, err := s.startDeploy(app, "manual")
 	if err != nil {
 		if errors.Is(err, errDeployNoImage) || errors.Is(err, errDeployNoRepo) {
-			writeStatus(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			writeErrorMsg(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		if errors.Is(err, errDeployInProgress) {
-			writeStatus(w, http.StatusConflict, map[string]string{"error": err.Error()})
+			writeErrorMsg(w, http.StatusConflict, err.Error())
 			return
 		}
 		writeError(w, err)
@@ -266,7 +266,7 @@ func (s *Server) stopApp(w http.ResponseWriter, app store.Application) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	if err := s.docker.Stop(ctx, app.ContainerID); err != nil && !docker.IsNotFound(err) {
-		writeStatus(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		writeErrorMsg(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	a, err := s.store.SetApplicationStatus(app.ID, store.StatusStopped)
@@ -279,17 +279,17 @@ func (s *Server) stopApp(w http.ResponseWriter, app store.Application) {
 
 func (s *Server) restartApp(w http.ResponseWriter, app store.Application) {
 	if app.ContainerID == "" {
-		writeStatus(w, http.StatusConflict, map[string]string{"error": "Container bulunamadı, önce deploy edin"})
+		writeErrorMsg(w, http.StatusConflict, "Container bulunamadı, önce deploy edin")
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	if err := s.docker.Restart(ctx, app.ContainerID); err != nil {
 		if docker.IsNotFound(err) {
-			writeStatus(w, http.StatusConflict, map[string]string{"error": "Container bulunamadı, önce deploy edin"})
+			writeErrorMsg(w, http.StatusConflict, "Container bulunamadı, önce deploy edin")
 			return
 		}
-		writeStatus(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		writeErrorMsg(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	a, err := s.store.SetApplicationStatus(app.ID, store.StatusRunning)
@@ -347,7 +347,7 @@ func (s *Server) handleApplicationStats(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if s.docker == nil {
-		writeStatus(w, http.StatusServiceUnavailable, map[string]string{"error": "Docker daemon erişilemiyor"})
+		writeErrorMsg(w, http.StatusServiceUnavailable, "Docker daemon erişilemiyor")
 		return
 	}
 	if app.ContainerID == "" {
@@ -364,7 +364,7 @@ func (s *Server) handleApplicationStats(w http.ResponseWriter, r *http.Request) 
 			writeJSON(w, docker.Stat{})
 			return
 		}
-		writeStatus(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		writeErrorMsg(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	writeJSON(w, stat)

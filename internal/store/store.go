@@ -8,10 +8,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/zeynelkozak/miso/internal/secret"
 	_ "modernc.org/sqlite"
 )
 
@@ -21,7 +23,8 @@ var schema string
 var ErrNotFound = errors.New("not found")
 
 type Store struct {
-	db *sql.DB
+	db     *sql.DB
+	cipher *secret.Cipher
 }
 
 func Open(path string) (*Store, error) {
@@ -38,7 +41,76 @@ func Open(path string) (*Store, error) {
 		_ = db.Close()
 		return nil, fmt.Errorf("migrate: %w", err)
 	}
-	return &Store{db: db}, nil
+
+	key, err := secret.LoadOrCreateKey(keyPath(path))
+	if err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("secret key: %w", err)
+	}
+	cipher, err := secret.NewCipher(key)
+	if err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("init cipher: %w", err)
+	}
+
+	s := &Store{db: db, cipher: cipher}
+	if err := s.migrateSecrets(); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("encrypt secrets: %w", err)
+	}
+	return s, nil
+}
+
+// keyPath derives the encryption key file location from the database path,
+// placing it alongside the DB (e.g. miso.db → miso.key).
+func keyPath(dbPath string) string {
+	return strings.TrimSuffix(dbPath, filepath.Ext(dbPath)) + ".key"
+}
+
+// migrateSecrets encrypts any auth tokens and webhook secrets still stored as
+// plaintext from before encryption was introduced. It is idempotent: already
+// encrypted values are left untouched.
+func (s *Store) migrateSecrets() error {
+	rows, err := s.db.Query(`SELECT id, auth_token, webhook_secret FROM applications`)
+	if err != nil {
+		return err
+	}
+	type rec struct{ id, token, secret string }
+	var recs []rec
+	for rows.Next() {
+		var r rec
+		if err := rows.Scan(&r.id, &r.token, &r.secret); err != nil {
+			rows.Close()
+			return err
+		}
+		recs = append(recs, r)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	for _, r := range recs {
+		token, secretVal, changed := r.token, r.secret, false
+		if r.token != "" && !secret.IsEncrypted(r.token) {
+			if token, err = s.cipher.Encrypt(r.token); err != nil {
+				return err
+			}
+			changed = true
+		}
+		if r.secret != "" && !secret.IsEncrypted(r.secret) {
+			if secretVal, err = s.cipher.Encrypt(r.secret); err != nil {
+				return err
+			}
+			changed = true
+		}
+		if changed {
+			if _, err := s.db.Exec(`UPDATE applications SET auth_token = ?, webhook_secret = ? WHERE id = ?`, token, secretVal, r.id); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // migrate adds columns introduced after the initial schema so databases
@@ -288,12 +360,20 @@ func (s *Store) CreateApplication(envID string, in ApplicationInput) (Applicatio
 	}
 	args, _ := json.Marshal(normalizeArgs(in.BuildArgs))
 	envVars, _ := json.Marshal(normalizeEnvVars(in.EnvVars))
+	authToken, err := s.cipher.Encrypt(in.AuthToken)
+	if err != nil {
+		return Application{}, err
+	}
+	webhookSecret, err := s.cipher.Encrypt(newToken(24))
+	if err != nil {
+		return Application{}, err
+	}
 	if _, err := s.db.Exec(`
 		INSERT INTO applications (id, environment_id, name, source_type, template_id, repo_url, branch, dockerfile_path,
 		  build_args, auth_token, image, host_port, container_port, env_vars, webhook_id, webhook_secret, status, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		id, envID, in.Name, source, in.TemplateID, in.RepoURL, branch, dockerfile, string(args), in.AuthToken, in.Image,
-		in.HostPort, in.ContainerPort, string(envVars), newID(), newToken(24), StatusStopped, ts, ts); err != nil {
+		id, envID, in.Name, source, in.TemplateID, in.RepoURL, branch, dockerfile, string(args), authToken, in.Image,
+		in.HostPort, in.ContainerPort, string(envVars), newID(), webhookSecret, StatusStopped, ts, ts); err != nil {
 		return Application{}, err
 	}
 	return s.GetApplication(id)
@@ -340,7 +420,11 @@ func (s *Store) UpdateApplicationEnv(id string, vars []EnvVar) (Application, err
 // UpdateApplicationAuthToken replaces (or, with an empty token, clears) the
 // repository auth token. It applies on the next deploy.
 func (s *Store) UpdateApplicationAuthToken(id, token string) (Application, error) {
-	res, err := s.db.Exec(`UPDATE applications SET auth_token = ?, updated_at = ? WHERE id = ?`, token, now(), id)
+	encrypted, err := s.cipher.Encrypt(token)
+	if err != nil {
+		return Application{}, err
+	}
+	res, err := s.db.Exec(`UPDATE applications SET auth_token = ?, updated_at = ? WHERE id = ?`, encrypted, now(), id)
 	if err != nil {
 		return Application{}, err
 	}
@@ -350,14 +434,17 @@ func (s *Store) UpdateApplicationAuthToken(id, token string) (Application, error
 	return s.GetApplication(id)
 }
 
-// ApplicationAuthToken returns the raw (unmasked) auth token for build use.
+// ApplicationAuthToken returns the decrypted (unmasked) auth token for build use.
 func (s *Store) ApplicationAuthToken(id string) (string, error) {
 	var token string
 	err := s.db.QueryRow(`SELECT auth_token FROM applications WHERE id = ?`, id).Scan(&token)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", ErrNotFound
 	}
-	return token, err
+	if err != nil {
+		return "", err
+	}
+	return s.cipher.Decrypt(token)
 }
 
 // MarkApplicationDeployed records a successful deploy: running status, built
@@ -397,18 +484,29 @@ func (s *Store) SetApplicationStatus(id, status string) (Application, error) {
 // ApplicationWebhook returns the application's webhook id and secret, lazily
 // generating and persisting them for rows created before webhooks existed.
 func (s *Store) ApplicationWebhook(id string) (webhookID, secret string, err error) {
-	err = s.db.QueryRow(`SELECT webhook_id, webhook_secret FROM applications WHERE id = ?`, id).Scan(&webhookID, &secret)
+	var stored string
+	err = s.db.QueryRow(`SELECT webhook_id, webhook_secret FROM applications WHERE id = ?`, id).Scan(&webhookID, &stored)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", "", ErrNotFound
 	}
 	if err != nil {
 		return "", "", err
 	}
-	if webhookID == "" || secret == "" {
-		webhookID, secret = newID(), newToken(24)
-		if _, err = s.db.Exec(`UPDATE applications SET webhook_id = ?, webhook_secret = ? WHERE id = ?`, webhookID, secret, id); err != nil {
+	if webhookID == "" || stored == "" {
+		// Lazily provision for rows created before webhooks existed.
+		secret = newToken(24)
+		encrypted, encErr := s.cipher.Encrypt(secret)
+		if encErr != nil {
+			return "", "", encErr
+		}
+		webhookID = newID()
+		if _, err = s.db.Exec(`UPDATE applications SET webhook_id = ?, webhook_secret = ? WHERE id = ?`, webhookID, encrypted, id); err != nil {
 			return "", "", err
 		}
+		return webhookID, secret, nil
+	}
+	if secret, err = s.cipher.Decrypt(stored); err != nil {
+		return "", "", err
 	}
 	return webhookID, secret, nil
 }
@@ -417,7 +515,11 @@ func (s *Store) ApplicationWebhook(id string) (webhookID, secret string, err err
 // the new value. Any GitHub webhook configured with the old secret stops working.
 func (s *Store) RegenerateWebhookSecret(id string) (string, error) {
 	secret := newToken(24)
-	res, err := s.db.Exec(`UPDATE applications SET webhook_secret = ?, updated_at = ? WHERE id = ?`, secret, now(), id)
+	encrypted, err := s.cipher.Encrypt(secret)
+	if err != nil {
+		return "", err
+	}
+	res, err := s.db.Exec(`UPDATE applications SET webhook_secret = ?, updated_at = ? WHERE id = ?`, encrypted, now(), id)
 	if err != nil {
 		return "", err
 	}
@@ -428,13 +530,18 @@ func (s *Store) RegenerateWebhookSecret(id string) (string, error) {
 }
 
 // GetApplicationByWebhookID resolves the application a webhook delivery targets,
-// returning the full application plus its secret for signature verification.
+// returning the full application plus its decrypted secret for signature
+// verification.
 func (s *Store) GetApplicationByWebhookID(webhookID string) (Application, string, error) {
-	var id, secret string
-	err := s.db.QueryRow(`SELECT id, webhook_secret FROM applications WHERE webhook_id = ?`, webhookID).Scan(&id, &secret)
+	var id, stored string
+	err := s.db.QueryRow(`SELECT id, webhook_secret FROM applications WHERE webhook_id = ?`, webhookID).Scan(&id, &stored)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Application{}, "", ErrNotFound
 	}
+	if err != nil {
+		return Application{}, "", err
+	}
+	secret, err := s.cipher.Decrypt(stored)
 	if err != nil {
 		return Application{}, "", err
 	}

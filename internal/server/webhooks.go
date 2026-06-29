@@ -25,17 +25,17 @@ const maxWebhookBody = 25 << 20
 func (s *Server) handleGitHubWebhook(w http.ResponseWriter, r *http.Request) {
 	app, secret, err := s.store.GetApplicationByWebhookID(chi.URLParam(r, "webhookId"))
 	if err != nil {
-		writeStatus(w, http.StatusNotFound, map[string]string{"error": "webhook bulunamadı"})
+		writeErrorMsg(w, http.StatusNotFound, "webhook bulunamadı")
 		return
 	}
 
 	body, err := io.ReadAll(io.LimitReader(r.Body, maxWebhookBody))
 	if err != nil {
-		writeStatus(w, http.StatusBadRequest, map[string]string{"error": "gövde okunamadı"})
+		writeErrorMsg(w, http.StatusBadRequest, "gövde okunamadı")
 		return
 	}
 	if !validGitHubSignature(secret, r.Header.Get("X-Hub-Signature-256"), body) {
-		writeStatus(w, http.StatusUnauthorized, map[string]string{"error": "imza doğrulanamadı"})
+		writeErrorMsg(w, http.StatusUnauthorized, "imza doğrulanamadı")
 		return
 	}
 
@@ -57,7 +57,7 @@ func (s *Server) handlePushEvent(w http.ResponseWriter, app store.Application, b
 		Deleted bool   `json:"deleted"`
 	}
 	if err := json.Unmarshal(body, &p); err != nil {
-		writeStatus(w, http.StatusBadRequest, map[string]string{"error": "geçersiz payload"})
+		writeErrorMsg(w, http.StatusBadRequest, "geçersiz payload")
 		return
 	}
 	branch := strings.TrimPrefix(p.Ref, "refs/heads/")
@@ -66,7 +66,7 @@ func (s *Server) handlePushEvent(w http.ResponseWriter, app store.Application, b
 		return
 	}
 	if s.docker == nil {
-		writeStatus(w, http.StatusServiceUnavailable, map[string]string{"error": "Docker daemon erişilemiyor"})
+		writeErrorMsg(w, http.StatusServiceUnavailable, "Docker daemon erişilemiyor")
 		return
 	}
 	if _, err := s.startDeploy(app, "push · "+branch); err != nil {
@@ -76,7 +76,7 @@ func (s *Server) handlePushEvent(w http.ResponseWriter, app store.Application, b
 			writeJSON(w, map[string]any{"ignored": true, "reason": "deploy in progress"})
 			return
 		}
-		writeStatus(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		writeErrorMsg(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	writeJSON(w, map[string]any{"ok": true, "deploying": app.Name, "branch": branch})
